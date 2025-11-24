@@ -14,7 +14,7 @@
     "@nuxt/fonts": "0.12.1",
     "@nuxt/icon": "2.1.0",
     "@nuxt/image": "2.0.0",
-    "better-sqlite3": "^12.4.1",
+    "better-sqlite3": "^12.4.6",
     "drizzle-orm": "^0.44.7",
     "jsonwebtoken": "^9.0.2",
     "markdown-it": "^14.1.0",
