@@ -32,6 +32,6 @@
     "@types/markdown-it": "^14.1.2",
     "@types/markdown-it-emoji": "^3.0.1",
     "@types/sanitize-html": "^2.16.0",
-    "drizzle-kit": "^0.31.7"
+    "drizzle-kit": "^0.31.8"
   }
 }
