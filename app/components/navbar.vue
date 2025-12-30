@@ -19,6 +19,23 @@ const onUpload = async (e: Event) => {
     })}`,
   );
 };
+
+const editorURL = import.meta.dev
+  ? "http://localhost:8601"
+  : `https://editor.${useRequestURL().hostname}`;
+
+const createDialogOpen = ref(false);
+const createProjectName = ref("");
+
+const createProject = async () => {
+  await navigateTo(
+    `${editorURL}/#${await $fetch("/api/create", {
+      method: "POST",
+      body: { name: createProjectName.value },
+    })}`,
+    { external: true },
+  );
+};
 </script>
 <template>
   <nav>
@@ -33,6 +50,18 @@ const onUpload = async (e: Event) => {
         <Icon v-else name="ri:sun-line" />
       </a>
     </ClientOnly>
+    <template v-if="user.loggedIn">
+      <a href="javascript:void(0);" @click="createDialogOpen = true">Create</a>
+      <Dialog title="Create Project" v-model:open="createDialogOpen">
+        <input
+          type="text"
+          placeholder="Project Name..."
+          v-model="createProjectName"
+        >
+        <button @click="createProject">Create</button>
+      </Dialog>
+    </template>
+    <NuxtLink v-else :to="editorURL">Create</NuxtLink>
     <NuxtLink to="/explore">Explore</NuxtLink>
     <input
       type="search"
