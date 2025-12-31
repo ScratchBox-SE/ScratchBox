@@ -10,7 +10,7 @@ const projects = await $fetch<
   headers: useRequestHeaders(["cookie"]),
 });
 
-const profilePicture = await $fetch(`/api/user/${route.params.name}/picture`);
+const profilePicture = await getProfilePicture(route.params.name as string);
 
 useHead({
   bodyAttrs: {
@@ -21,7 +21,7 @@ useHead({
 <template>
   <div class="profile">
     <h1>
-      <img :src="profilePicture" /> {{
+      <img :src="profilePicture as string" /> {{
         projects.private ? "Your" : `${route.params.name}'s`
       }} Profile
     </h1>

@@ -50,12 +50,12 @@ watch(sortedComments, async () => {
 
   commentProfiles.value = await Promise.all(
     sortedComments.value.map((comment) =>
-      $fetch(`/api/user/${comment.user}/picture`).catch(() => null) // handle errors per request
+      getProfilePicture(comment.user).catch(() => null) // handle errors per request
     ),
   ) as string[];
 }, { immediate: true });
 
-const profilePicture = await $fetch(`/api/user/${project.value?.user}/picture`);
+const profilePicture = await getProfilePicture(project.value?.user);
 const { data: liked } = await useFetch<boolean>(
   `/api/project/${projectId}/liked`,
   {
@@ -229,7 +229,7 @@ const openEditor = async () => {
         </p>
       </div>
       <p>
-        <img :src="profilePicture"> By <NuxtLink
+        <img :src="profilePicture as string"> By <NuxtLink
           :to="`/user/${project?.user}`"
         >{{ project?.user }}</NuxtLink>
 
