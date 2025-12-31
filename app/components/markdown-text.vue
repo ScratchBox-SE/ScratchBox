@@ -23,4 +23,10 @@ blockquote {
   border-left: 0.33rem solid var(--color-blockquote);
   padding-left: 0.5rem;
 }
+
+hr {
+  margin: 1rem 0;
+  border: 1px solid var(--color-text);
+  border-radius: 1px;
+}
 </style>
