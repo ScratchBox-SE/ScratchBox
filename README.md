@@ -47,7 +47,7 @@ A WIP project hosting/distribution platform for Scratch Everywhere!
 - [x] API for user projects
 - [x] Account profiles
 - [x] Improved Error Handling
-- [ ] Editor (@dogo6647 is working on the UI)
+- [x] Editor
 - [ ] Homebrew App Store Integrations
   - [ ] Wii U Homebrew App Store
   - [ ] Switch Homebrew App Store
@@ -55,7 +55,7 @@ A WIP project hosting/distribution platform for Scratch Everywhere!
 - [ ] Commenting
   - [x] Create comments
   - [ ] Edit comments
-  - [ ] Delete comments (will likely be a moderation only feature)
+  - [ ] Delete comments
 
 ## Post-Testing
 
