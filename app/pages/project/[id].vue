@@ -566,6 +566,7 @@ body.project-page main {
     }
 
     &.download, &.upload, &.thumbnail-upload, &.delete {
+      position: absolute;
       right: 1rem;
     }
 
@@ -573,8 +574,7 @@ body.project-page main {
       bottom: 3.5rem;
     }
 
-    &.download {
-      position: absolute;
+    &.download, &.thumbnail-upload {
       bottom: 1rem;
     }
 
