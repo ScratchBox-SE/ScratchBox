@@ -23,9 +23,9 @@ interface UserData {
 export const getProfilePicture = async (username: string | undefined) => {
   if (!username) return null;
 
-  const data = await $fetch(
+  const data = await $fetch<UserData>(
     `https://trampoline.turbowarp.org/api/users/${username}`,
-  ) as UserData;
+  );
 
   return data.profile.images["90x90"];
 };
