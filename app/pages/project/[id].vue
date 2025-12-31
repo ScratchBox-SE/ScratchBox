@@ -50,12 +50,12 @@ watch(sortedComments, async () => {
 
   commentProfiles.value = await Promise.all(
     sortedComments.value.map((comment) =>
-      $fetch(`/api/user/${comment.user}/picture`).catch(() => null) // handle errors per request
+      getProfilePicture(comment.user).catch(() => null) // handle errors per request
     ),
   ) as string[];
 }, { immediate: true });
 
-const profilePicture = await $fetch(`/api/user/${project.value?.user}/picture`);
+const profilePicture = await getProfilePicture(project.value?.user);
 const { data: liked } = await useFetch<boolean>(
   `/api/project/${projectId}/liked`,
   {
@@ -217,6 +217,14 @@ useHead({
     class: "project-page",
   },
 });
+
+const editorURL = import.meta.dev
+  ? "http://localhost:8601"
+  : `https://editor.${useRequestURL().hostname}`;
+
+const openEditor = async () => {
+  await navigateTo(`${editorURL}/#${projectId}`, { external: true });
+};
 </script>
 <template>
   <div
@@ -249,25 +257,30 @@ useHead({
         </p>
       </div>
       <p>
-        <img :src="profilePicture"> By <NuxtLink
+        <img :src="profilePicture as string"> By <NuxtLink
           :to="`/user/${project?.user}`"
         >{{ project?.user }}</NuxtLink>
 
-        <template v-if="user.loggedIn && user.username == project?.user">
-          <button v-if="!editing" @click="editing = true">
-            <Icon name="ri:edit-line" /> Edit
+        <div class="options-right">
+          <button @click="openEditor" v-if="!editing">
+            <Icon name="ri:edit-line" /> Editor
           </button>
-          <template v-else>
-            <button @click="isPrivate = !isPrivate" class="private">
-              <Icon name="ri:user-line" /> {{
-                isPrivate ? "Make Public" : "Make Private"
-              }}
+          <template v-if="user.loggedIn && user.username == project?.user">
+            <button @click="editing = true" v-if="!editing">
+              <Icon name="ri:settings-4-line" /> Settings
             </button>
-            <button @click="save">
-              <Icon name="ri:save-line" /> Save
-            </button>
+            <template v-else>
+              <button @click="isPrivate = !isPrivate">
+                <Icon name="ri:user-line" /> {{
+                  isPrivate ? "Make Public" : "Make Private"
+                }}
+              </button>
+              <button @click="save">
+                <Icon name="ri:save-line" /> Save
+              </button>
+            </template>
           </template>
-        </template>
+        </div>
       </p>
       <iframe
         v-if='platforms.includes("wasm")'
@@ -278,7 +291,7 @@ useHead({
       />
       <iframe
         v-else-if='platforms.includes("turbowarp")'
-        :src="`https://turbowarp.org/embed?project_url=${useRequestURL().host}/api/project/${projectId}/download&addons=gamepad,pause`"
+        :src="`${editorURL}/embed.html?addons=gamepad,pause#${projectId}`"
         allowtransparency="true"
         scrolling="no"
         allowfullscreen="true"
@@ -587,15 +600,15 @@ body.project-page main {
         margin-right: calc(0.75rem - 0.5ch);
       }
 
-      & button {
+      & .options-right {
+        display: flex;
+        position: absolute;
         right: 0;
         top: 50%;
         translate: 0 -50%;
         height: 2rem;
-      }
-
-      & .private {
-        right: 5rem;
+        gap: 0.5rem;
+        bottom: 1rem;
       }
     }
 
@@ -641,8 +654,6 @@ body.project-page main {
     display: flex;
     gap: 0.5rem;
     cursor: pointer;
-    position: absolute;
-    bottom: 1rem;
     text-decoration: none;
     font-weight: bold;
 
@@ -655,11 +666,16 @@ body.project-page main {
     }
 
     &.download, &.upload, &.thumbnail-upload, &.delete {
+      position: absolute;
       right: 1rem;
     }
 
     &.upload {
       bottom: 3.5rem;
+    }
+
+    &.download, &.thumbnail-upload {
+      bottom: 1rem;
     }
 
     &.delete {
