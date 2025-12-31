@@ -1,7 +1,7 @@
 import { db } from "../../../utils/drizzle";
 import * as schema from "../../../database/schema";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const token = getCookie(event, "SB_TOKEN");
@@ -52,6 +52,19 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  const commentAuthor = db.select({
+    user: schema.projectComments.user
+  }).from(schema.projectComments).where(eq(schema.projectComments.id, id)).get();
+
+  if (typeof decoded !== "string" && decoded.username !== commentAuthor?.user) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: "Comment author does not match requesting user"
+    });
+  }
+
+  // create new comment and mark the old one
+  // as edited by setting its `editId` to the new comment's ID
   const result = db.transaction((tx) => {
     const newComment = tx.insert(schema.projectComments).values({
       projectId: getRouterParam(event, "id") as string,
@@ -69,7 +82,7 @@ export default defineEventHandler(async (event) => {
     if (updateResult.changes === 0) {
       throw createError({
         statusCode: 404,
-        statusMessage: `Comment ID ${id.toString()} found`,
+        statusMessage: `Comment ID ${id.toString()} not found`,
       });
     }
 

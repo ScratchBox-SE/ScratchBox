@@ -185,10 +185,18 @@ const comment = async () => {
 // Int that points to the comment ID you're editing (and zero represents not editing)
 const editingComment = ref<{id: number, content: string}>({id: 0, content: ""});
 
-const editComment = (id: number, content: string) => {
-  editingComment.value = {id, content};
-};
+const editComment = (comment: {id: number, content: string}) => editingComment.value = {id: comment.id, content: comment.content};
+const stopEditingComment = () => editingComment.value = {id:0, content:''};
 const saveComment = async () => {
+  // exit if no changes made to save wasting server resources
+  const original = project.value!.comments.find(
+    (c) => c.id === editingComment.value.id
+  );
+  if (editingComment.value.content === original?.content) {
+    editingComment.value = {id: 0, content: ""};
+    return;
+  }
+
   const res = await $fetch(`/api/project/${projectId}/comment`, {
     method: "PATCH",
     headers: useRequestHeaders(["cookie"]),
@@ -197,9 +205,6 @@ const saveComment = async () => {
 
   // using this as an OK response check for now
   if (typeof res === "number") {
-    const original = project.value!.comments.find(
-      (c) => c.id === editingComment.value.id
-    );
     if (original) {
       original.content = editingComment.value.content;
       original.edited = true;
@@ -375,17 +380,23 @@ const openEditor = async () => {
           {{ comment.user }}
         </NuxtLink>
 
-        <button v-if="editingComment.id === 0 && comment.user === user.username" @click="editComment(comment.id, comment.content)">
+        <button v-if="editingComment.id === 0 && comment.user === user.username" @click="editComment(comment)">
           <Icon id="edit-icon" name="ri:pencil-fill" />
         </button>
       </div>
 
       <MarkdownText v-if="editingComment.id !== comment.id" :markdown="comment.content" />
       <div id="edit-container" v-else>
-        <textarea v-model="editingComment.content" />
-        <button @click="saveComment()">
-          <Icon name="ri:send-plane-fill" /> Save
-        </button>
+        <textarea name="comment-edit-field" v-model="editingComment.content" @keydown.escape="stopEditingComment()" />
+
+        <div id="button-spacer">
+          <button @click="stopEditingComment()">
+            <Icon name="ri:close-fill" /> Cancel
+          </button>
+          <button @click="saveComment()">
+            <Icon name="ri:send-plane-fill" /> Save
+          </button>
+        </div>
       </div>
       
       <div v-if="editingComment.id !== comment.id">
@@ -423,10 +434,7 @@ body.project-page main {
   }
 
   & #edit-container {
-    display: flex;
-    flex-direction: column;
     position: relative;
-    height: auto;
 
     & textarea {
       field-sizing: content !important;
@@ -441,12 +449,19 @@ body.project-page main {
       background-color: var(--color-secondary-background);
     }
 
-    & button {
+    & #button-spacer {
       position: absolute;
-      right: 0rem;
-      bottom: -1rem;
-      margin: 0.5rem;
-      align-self: flex-end;
+      display: inline-flex;
+      bottom: 0;
+      right: 1rem;
+      gap: 0.5rem;
+      pointer-events: auto;
+    }
+
+    & #button-spacer button {
+      position: relative;
+      top: auto;
+      right: auto;
     }
   }
 

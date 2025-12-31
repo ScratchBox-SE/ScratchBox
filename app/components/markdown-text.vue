@@ -32,5 +32,6 @@ hr {
 
 .mdtext {
   word-wrap: break-word;
+  white-space: pre-line;
 }
 </style>
