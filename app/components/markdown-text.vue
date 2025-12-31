@@ -6,7 +6,7 @@ const props = defineProps<{ markdown: string }>();
 const renderedMarkdown = computed(() => md.render(props.markdown));
 </script>
 <template>
-  <div v-html="renderedMarkdown"></div>
+  <div class="mdtext" v-html="renderedMarkdown"></div>
 </template>
 <style>
 *:not(pre) > code, pre {
@@ -22,5 +22,9 @@ const renderedMarkdown = computed(() => md.render(props.markdown));
 blockquote {
   border-left: 0.33rem solid var(--color-blockquote);
   padding-left: 0.5rem;
+}
+
+.mdtext {
+  word-wrap: break-word;
 }
 </style>

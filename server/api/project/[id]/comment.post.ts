@@ -22,10 +22,26 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  await db.insert(schema.projectComments).values({
+  const content = await readRawBody(event) as string;
+  if (!content) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "No comment body provided",
+    });
+  }
+  else if (content.length > 500) {
+    throw createError({
+      statusCode: 413,
+      statusMessage: "Comment body must be 500 characters or less",
+    });
+  }
+
+  const comment = await db.insert(schema.projectComments).values({
     projectId: getRouterParam(event, "id") as string,
     user: (decoded as { username: string }).username,
-    content: await readRawBody(event) as string,
+    content,
     createdAt: new Date(),
   });
+
+  return comment.lastInsertRowid;
 });

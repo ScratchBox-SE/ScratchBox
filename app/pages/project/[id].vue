@@ -25,7 +25,7 @@ const { data: fetchedProject } = await useFetch<
     user: string;
     likes: number;
     platforms: (keyof typeof platformsMap)[];
-    comments: { user: string; createdAt: string; content: string }[];
+    comments: { id: number, user: string; createdAt: string; content: string, edited: boolean }[];
   }
 >(`/api/project/${projectId}`);
 const project = ref() as typeof fetchedProject;
@@ -167,17 +167,45 @@ const save = async () => {
 };
 
 const comment = async () => {
-  await $fetch(`/api/project/${projectId}/comment`, {
+  const commentId = await $fetch(`/api/project/${projectId}/comment`, {
     method: "POST",
     headers: useRequestHeaders(["cookie"]),
     body: commentContent.value,
   });
   project.value!.comments = [...project.value!.comments, {
+    id: commentId,
     user: user.username,
     createdAt: new Date().toString(),
     content: commentContent.value,
+    edited: false,
   }];
   commentContent.value = "";
+};
+
+// Int that points to the comment ID you're editing (and zero represents not editing)
+const editingComment = ref<{id: number, content: string}>({id: 0, content: ""});
+
+const editComment = (id: number, content: string) => {
+  editingComment.value = {id, content};
+};
+const saveComment = async () => {
+  const res = await $fetch(`/api/project/${projectId}/comment`, {
+    method: "PATCH",
+    headers: useRequestHeaders(["cookie"]),
+    body: editingComment.value,
+  });
+
+  // using this as an OK response check for now
+  if (typeof res === "number") {
+    const original = project.value!.comments.find(
+      (c) => c.id === editingComment.value.id
+    );
+    if (original) {
+      original.content = editingComment.value.content;
+      original.edited = true;
+    }
+    editingComment.value = {id: 0, content: ""};
+  }
 };
 
 onMounted(() => {
@@ -326,13 +354,31 @@ useHead({
         <Icon name="ri:send-plane-fill" /> Comment
       </button>
     </template>
+
     <div class="comment" v-for="(comment, i) in sortedComments">
-      <NuxtLink class="comment-profile" :to="`/user/${comment.user}`">
-        <img :src="commentProfiles[i]" />
-        {{ comment.user }}
-      </NuxtLink>
-      <MarkdownText :markdown="comment.content" />
-      <span>{{ comment.timeSince }}</span>
+      <div class="comment-header">
+        <NuxtLink class="comment-profile" :to="`/user/${comment.user}`">
+          <img :src="commentProfiles[i]" />
+          {{ comment.user }}
+        </NuxtLink>
+
+        <button v-if="editingComment.id === 0 && comment.user === user.username" @click="editComment(comment.id, comment.content)">
+          <Icon id="edit-icon" name="ri:pencil-fill" />
+        </button>
+      </div>
+
+      <MarkdownText v-if="editingComment.id !== comment.id" :markdown="comment.content" />
+      <div id="edit-container" v-else>
+        <textarea v-model="editingComment.content" />
+        <button @click="saveComment()">
+          <Icon name="ri:send-plane-fill" /> Save
+        </button>
+      </div>
+      
+      <div v-if="editingComment.id !== comment.id">
+        <span id="timeago">{{ comment.timeSince }}</span>
+        <span id="editedmark" v-if="comment.edited">(edited)</span>
+      </div>
     </div>
   </div>
 </template>
@@ -347,8 +393,73 @@ body.project-page main {
   background: var(--color-background);
   border-radius: 1rem;
   padding: 1rem;
-  height: 12rem;
+  padding-bottom: 2rem;
+  min-height: 12rem;
   position: relative;
+
+  & #timeago, #editedmark {
+    position: absolute;
+    opacity: 0.5;
+    bottom: 1rem;
+  }
+  & #timeago {
+    right: 1rem;
+  }
+  & #editedmark {
+    left: 1rem;
+  }
+
+  & #edit-container {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    height: auto;
+
+    & textarea {
+      field-sizing: content !important;
+      min-height: 6rem;
+      height: auto !important;
+      max-height: none !important;
+      overflow-y: hidden !important;
+      resize: none;
+      padding: 0.5rem !important;
+      margin-bottom: -1rem !important;
+      font-size: 1rem;
+      background-color: var(--color-secondary-background);
+    }
+
+    & button {
+      position: absolute;
+      right: 0rem;
+      bottom: -1rem;
+      margin: 0.5rem;
+      align-self: flex-end;
+    }
+  }
+
+  & .comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 1rem;
+
+    & button {
+      border: none;
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: static;
+      border-radius: 100%;
+
+      & #edit-icon {
+        position: static;
+        opacity: 1;
+      }
+    }
+  }
 
   & .comment-profile {
     display: flex;
@@ -362,17 +473,6 @@ body.project-page main {
     height: 3rem;
     width: 3rem;
     border-radius: 0.75rem;
-  }
-
-  & div {
-    margin-top: 1rem;
-  }
-
-  & span {
-    position: absolute;
-    opacity: 0.5;
-    right: 1rem;
-    bottom: 1rem;
   }
 }
 
