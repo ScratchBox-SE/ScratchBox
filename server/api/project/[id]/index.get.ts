@@ -1,6 +1,6 @@
 import { db } from "../../../utils/drizzle";
 import * as schema from "../../../database/schema";
-import { count, eq } from "drizzle-orm";
+import { count, eq, desc } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const projectId = getRouterParam(event, "id") as string;
@@ -16,6 +16,33 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  // select all comments from newest to oldest
+  const allComments = await db.select().from(schema.projectComments).where(
+    eq(schema.projectComments.projectId, projectId),
+  ).orderBy(desc(schema.projectComments.createdAt));
+
+  const commentsById = new Map<number, typeof allComments[0]>();
+  allComments.forEach((comment) => {
+    commentsById.set(comment.id, comment);
+  });
+
+  const seenOriginalIds = new Set<number>();
+  const processedComments: Array<typeof allComments[0] & { edited: boolean }> = [];
+
+  for (const comment of allComments) {
+    // only push unique originalIds (so you only see the newest edit)
+    if (!seenOriginalIds.has(comment.originalId)) {
+      seenOriginalIds.add(comment.originalId);
+      const originalComment = commentsById.get(comment.originalId);
+      const createdAt = originalComment?.createdAt ?? comment.createdAt;
+      processedComments.push({
+        ...comment,
+        edited: comment.originalId !== comment.id,
+        createdAt,
+      });
+    }
+  }
+
   setHeader(event, "Access-Control-Allow-Origin", "*");
 
   return {
@@ -26,12 +53,6 @@ export default defineEventHandler(async (event) => {
     platforms: (await db.select().from(schema.projectPlatforms).where(
       eq(schema.projectPlatforms.projectId, projectId),
     )).map((projectPlatform) => projectPlatform.platform),
-    comments: await db.select({
-      user: schema.projectComments.user,
-      createdAt: schema.projectComments.createdAt,
-      content: schema.projectComments.content,
-    }).from(schema.projectComments).where(
-      eq(schema.projectComments.projectId, projectId),
-    ),
+    comments: processedComments,
   };
 });

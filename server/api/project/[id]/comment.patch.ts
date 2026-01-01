@@ -23,8 +23,23 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const content = await readRawBody(event) as string;
-  if (!content) {
+  const body = await readRawBody(event);
+  if (!body) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "No request body provided",
+    });
+  }
+
+  const { id, originalId, content } = JSON.parse(body as string) as {id: number; originalId: number; content: string};
+
+  if (!id) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "No comment ID provided",
+    });
+  }
+  else if (!content) {
     throw createError({
       statusCode: 400,
       statusMessage: "No comment body provided",
@@ -37,17 +52,24 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const comment = await db.insert(schema.projectComments).values({
+  const commentAuthor = db.select({
+    user: schema.projectComments.user
+  }).from(schema.projectComments).where(eq(schema.projectComments.id, id)).get();
+
+  if (typeof decoded !== "string" && decoded.username !== commentAuthor?.user) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: "Comment author does not match requesting user"
+    });
+  }
+
+  const newComment = await db.insert(schema.projectComments).values({
     projectId: getRouterParam(event, "id") as string,
-    originalId: 0, // we're going to update this in a sec
+    originalId,
     user: (decoded as { username: string }).username,
     content,
     createdAt: new Date(),
   });
 
-  await db.update(schema.projectComments)
-    .set({ originalId: Number(comment.lastInsertRowid) })
-    .where(eq(schema.projectComments.id, Number(comment.lastInsertRowid)));
-
-  return comment.lastInsertRowid;
+  return newComment.lastInsertRowid;
 });
