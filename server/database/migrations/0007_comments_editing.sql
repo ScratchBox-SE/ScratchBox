@@ -1,7 +1,7 @@
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
 CREATE TABLE `__new_project_comments` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`edit_id` integer,
+	`original_id` integer NOT NULL,
 	`project_id` text NOT NULL,
 	`user` text NOT NULL,
 	`body` text NOT NULL,

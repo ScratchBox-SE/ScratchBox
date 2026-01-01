@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { id, content } = JSON.parse(body as string) as {id: number; content: string};
+  const { id, originalId, content } = JSON.parse(body as string) as {id: number; originalId: number; content: string};
 
   if (!id) {
     throw createError({
@@ -63,31 +63,13 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // create new comment and mark the old one
-  // as edited by setting its `editId` to the new comment's ID
-  const result = db.transaction((tx) => {
-    const newComment = tx.insert(schema.projectComments).values({
-      projectId: getRouterParam(event, "id") as string,
-      user: (decoded as { username: string }).username,
-      content,
-      createdAt: new Date(),
-    }).returning().get();
-
-    const newCommentId = newComment.id;
-
-    const updateResult = tx.update(schema.projectComments).set({
-      editId: newCommentId,
-    }).where(eq(schema.projectComments.id, id)).run();
-
-    if (updateResult.changes === 0) {
-      throw createError({
-        statusCode: 404,
-        statusMessage: `Comment ID ${id.toString()} not found`,
-      });
-    }
-
-    return newCommentId;
+  const newComment = await db.insert(schema.projectComments).values({
+    projectId: getRouterParam(event, "id") as string,
+    originalId,
+    user: (decoded as { username: string }).username,
+    content,
+    createdAt: new Date(),
   });
 
-  return result;
+  return newComment.lastInsertRowid;
 });

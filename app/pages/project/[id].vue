@@ -25,7 +25,7 @@ const { data: fetchedProject } = await useFetch<
     user: string;
     likes: number;
     platforms: (keyof typeof platformsMap)[];
-    comments: { id: number, user: string; createdAt: string; content: string, edited: boolean }[];
+    comments: { id: number, originalId: number, user: string; createdAt: string; content: string, edited: boolean }[];
   }
 >(`/api/project/${projectId}`);
 const project = ref() as typeof fetchedProject;
@@ -174,6 +174,7 @@ const comment = async () => {
   });
   project.value!.comments = [...project.value!.comments, {
     id: commentId,
+    originalId: commentId,
     user: user.username,
     createdAt: new Date().toString(),
     content: commentContent.value,
@@ -192,7 +193,7 @@ const saveComment = async () => {
   const original = project.value!.comments.find(
     (c) => c.id === editingComment.value.id
   );
-  if (editingComment.value.content === original?.content) {
+  if (!original || editingComment.value.content === original.content) {
     editingComment.value = {id: 0, content: ""};
     return;
   }
@@ -200,7 +201,7 @@ const saveComment = async () => {
   const res = await $fetch(`/api/project/${projectId}/comment`, {
     method: "PATCH",
     headers: useRequestHeaders(["cookie"]),
-    body: editingComment.value,
+    body: {id: editingComment.value.id, originalId: original.originalId, content: editingComment.value.content},
   });
 
   // using this as an OK response check for now
@@ -208,6 +209,7 @@ const saveComment = async () => {
     if (original) {
       original.content = editingComment.value.content;
       original.edited = true;
+      original.id = res;
     }
     editingComment.value = {id: 0, content: ""};
   }

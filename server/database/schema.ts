@@ -32,7 +32,7 @@ export const projectPlatforms = sqliteTable("project_platforms", {
 
 export const projectComments = sqliteTable("project_comments", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  editId: integer("edit_id"),
+  originalId: integer("original_id").notNull(),
   projectId: text("project_id").notNull().references(() => projects.id),
   user: text("user").notNull(),
   content: text("body").notNull(),

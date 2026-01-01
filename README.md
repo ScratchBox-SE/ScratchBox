@@ -54,7 +54,7 @@ A WIP project hosting/distribution platform for Scratch Everywhere!
   - [x] Unistore
 - [ ] Commenting
   - [x] Create comments
-  - [ ] Edit comments
+  - [x] Edit comments
   - [ ] Delete comments
 
 ## Post-Testing

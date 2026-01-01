@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "91ae1c27-5a1a-4800-a463-5e83f2459fc8",
+  "id": "21a289a5-59e9-4760-9170-9c06ac8e285f",
   "prevId": "e964c2ac-63e2-4cd2-b54a-042dc37789ad",
   "tables": {
     "project_comments": {
@@ -14,11 +14,11 @@
           "notNull": true,
           "autoincrement": true
         },
-        "edit_id": {
-          "name": "edit_id",
+        "original_id": {
+          "name": "original_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
         "project_id": {

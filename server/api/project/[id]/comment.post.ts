@@ -1,6 +1,7 @@
 import { db } from "../../../utils/drizzle";
 import * as schema from "../../../database/schema";
 import jwt, { JwtPayload } from "jsonwebtoken";
+import { eq } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const token = getCookie(event, "SB_TOKEN");
@@ -38,10 +39,15 @@ export default defineEventHandler(async (event) => {
 
   const comment = await db.insert(schema.projectComments).values({
     projectId: getRouterParam(event, "id") as string,
+    originalId: 0, // we're going to update this in a sec
     user: (decoded as { username: string }).username,
     content,
     createdAt: new Date(),
   });
+
+  await db.update(schema.projectComments)
+    .set({ originalId: Number(comment.lastInsertRowid) })
+    .where(eq(schema.projectComments.id, Number(comment.lastInsertRowid)));
 
   return comment.lastInsertRowid;
 });
