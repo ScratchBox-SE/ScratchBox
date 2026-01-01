@@ -562,6 +562,7 @@ body.project-page main {
     }
 
     &.likes {
+      position: absolute;
       left: 1rem;
     }
 
@@ -574,7 +575,7 @@ body.project-page main {
       bottom: 3.5rem;
     }
 
-    &.download, &.thumbnail-upload {
+    &.download, &.thumbnail-upload, &.likes {
       bottom: 1rem;
     }
 
