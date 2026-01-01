@@ -36,6 +36,17 @@ const createProject = async () => {
     { external: true },
   );
 };
+
+let userRoles: string[] = [];
+if (user.loggedIn) {
+  try {
+    const res = await $fetch<{ roles: string[] }>(`/api/user/${user.username}/user`, {
+      method: "GET",
+      headers: useRequestHeaders(["cookie"]),
+    });
+    userRoles = res.roles ?? [];
+  } catch {}
+}
 </script>
 <template>
   <nav>
@@ -63,6 +74,7 @@ const createProject = async () => {
     </template>
     <NuxtLink v-else :to="editorURL">Create</NuxtLink>
     <NuxtLink to="/explore">Explore</NuxtLink>
+    <NuxtLink v-if="userRoles.includes('admin')" to="/admin">Moderate</NuxtLink>
     <input
       type="search"
       placeholder="Search..."

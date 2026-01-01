@@ -44,3 +44,14 @@ export const projectComments = sqliteTable("project_comments", {
 export const unistoreData = sqliteTable("unistore_data", {
   revision: integer("revision").notNull(),
 });
+
+export const userRoles = sqliteTable("user_roles", {
+  user: text("user").primaryKey(),
+  roles: text("roles", { mode: "json" }).notNull(), // array stored as JSON, allows multiple roles per user
+  createdAt: integer("created_at", { mode: "timestamp" }).default(
+    sql`(strftime('%s', 'now'))`,
+  ).notNull(),
+  lastUpdated: integer("last_updated", { mode: "timestamp" }).default(
+    sql`(strftime('%s', 'now'))`,
+  ).notNull(),
+});
