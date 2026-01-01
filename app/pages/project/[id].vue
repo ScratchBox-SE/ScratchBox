@@ -369,7 +369,13 @@ const openEditor = async () => {
     v-if="user.loggedIn || project?.comments.length > 0"
   >
     <template v-if="user.loggedIn">
-      <textarea placeholder="Leave a comment!" v-model="commentContent" />
+      <textarea
+        name="comment-create-field"
+        placeholder="Leave a comment!"
+        v-model="commentContent"
+        maxlength="500"
+        style="font-size: 1rem;"
+      />
       <button @click="comment">
         <Icon name="ri:send-plane-fill" /> Comment
       </button>
@@ -389,7 +395,12 @@ const openEditor = async () => {
 
       <MarkdownText v-if="editingComment.id !== comment.id" :markdown="comment.content" />
       <div id="edit-container" v-else>
-        <textarea name="comment-edit-field" v-model="editingComment.content" @keydown.escape="stopEditingComment()" />
+        <textarea
+          name="comment-edit-field"
+          v-model="editingComment.content"
+          @keydown.escape="stopEditingComment()"
+          maxlength="500"
+        />
 
         <div id="button-spacer">
           <button @click="stopEditingComment()">
