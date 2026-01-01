@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     event,
     {
       "Access-Control-Allow-Origin": process.env.NODE_ENV === "production"
-        ? "https://editor." + useRequestURL().hostname
+        ? "https://editor." + getRequestURL(event).hostname
         : "http://localhost:8601",
       "Access-Control-Allow-Credentials": true,
     },
