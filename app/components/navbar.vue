@@ -40,11 +40,11 @@ const createProject = async () => {
 let userRoles: string[] = [];
 if (user.loggedIn) {
   try {
-    const res = await $fetch<{ roles: string[] }>(`/api/user/${user.username}/user`, {
+    const res = await $fetch(`/api/user/${user.username}/roles`, {
       method: "GET",
       headers: useRequestHeaders(["cookie"]),
     });
-    userRoles = res.roles ?? [];
+    userRoles = res ?? [];
   } catch {}
 }
 </script>

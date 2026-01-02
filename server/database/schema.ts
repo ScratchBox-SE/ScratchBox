@@ -46,12 +46,15 @@ export const unistoreData = sqliteTable("unistore_data", {
 });
 
 export const userRoles = sqliteTable("user_roles", {
-  user: text("user").primaryKey(),
-  roles: text("roles", { mode: "json" }).notNull(), // array stored as JSON, allows multiple roles per user
-  createdAt: integer("created_at", { mode: "timestamp" }).default(
+  user: text("user").notNull(),
+  role: text("role").notNull(),
+  addedAt: integer("added_at", { mode: "timestamp" }).default(
     sql`(strftime('%s', 'now'))`,
   ).notNull(),
-  lastUpdated: integer("last_updated", { mode: "timestamp" }).default(
-    sql`(strftime('%s', 'now'))`,
-  ).notNull(),
-});
+  
+  // optional fields for bans, but no reason they couldn't be used for other roles
+  expiresAt: integer("expires_at", { mode: "timestamp" }),
+  description: text("description"),
+}, (t) => [
+  primaryKey({ columns: [t.user, t.role] }),
+]);

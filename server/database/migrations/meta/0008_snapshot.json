@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "50c47b62-f10c-47dd-a3d5-166e38d07c61",
+  "id": "6ad7aa06-2209-4788-b654-7e096424834e",
   "prevId": "21a289a5-59e9-4760-9170-9c06ac8e285f",
   "tables": {
     "project_comments": {
@@ -245,37 +245,51 @@
         "user": {
           "name": "user",
           "type": "text",
-          "primaryKey": true,
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "roles": {
-          "name": "roles",
+        "role": {
+          "name": "role",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "created_at": {
-          "name": "created_at",
+        "added_at": {
+          "name": "added_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
           "default": "(strftime('%s', 'now'))"
         },
-        "last_updated": {
-          "name": "last_updated",
+        "expires_at": {
+          "name": "expires_at",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now'))"
+          "notNull": false,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {},
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "user_roles_user_role_pk": {
+          "columns": [
+            "user",
+            "role"
+          ],
+          "name": "user_roles_user_role_pk"
+        }
+      },
       "uniqueConstraints": {},
       "checkConstraints": {}
     }
