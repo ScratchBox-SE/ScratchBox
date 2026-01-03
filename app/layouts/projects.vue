@@ -2,7 +2,7 @@
 const props = useAttrs();
 const route = useRoute();
 
-var url = new URL(`https://scratchbox.dev/${props.path}`); // not like the url will matter anyway since we're just going to use it for the back/next path
+var url = new URL(`${useRequestURL().origin}/${props.path}`); // not like the url will matter anyway since we're just going to use it for the back/next path
 
 var back = new URLSearchParams(url.search);
 back.set("p", Number(route.query.p || "1") - 1);
