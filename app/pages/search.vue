@@ -6,9 +6,7 @@ if (route.query.q === undefined || route.query.q === "") {
 const { data: results, pending } = await useAsyncData(
   "search-results",
   () => {
-    return $fetch<
-      { name: string; description: string; id: string }[]
-    >(
+    return $fetch<{ name: string; description: string; id: string }[]>(
       `/api/search?q=${route.query.q}&p=${route.query.p || "1"}`,
     );
   },
@@ -18,72 +16,19 @@ const { data: results, pending } = await useAsyncData(
 );
 
 useHead({
+  title: `Results for "${route.query.q}" - ScratchBox`,
   bodyAttrs: {
     class: "search-page",
   },
 });
 </script>
 <template>
-  <div class="search-content">
-    <h1 v-if="pending">Loading...</h1>
-    <h1 v-else-if="results?.length === 0">No results found.</h1>
-    <Project
-      v-else
-      v-for="result in results"
-      :name="result.name"
-      :description='
-        result.description.length > 75
-          ? result.description.slice(0, 75) + "..."
-          : result.description
-      '
-      :id="result.id"
-    />
-  </div>
-  <div class="page-controls">
-    <NuxtLink
-      v-if='Number(route.query.p || "1") > 1'
-      :to='`/search?q=${route.query.q}&p=${Number(route.query.p || "1") - 1}`'
-    >
-      Back
-    </NuxtLink>
-    <p>{{ route.query.p || "1" }}</p>
-    <NuxtLink
-      :to='`/search?q=${route.query.q}&p=${Number(route.query.p || "1") + 1}`'
-    >
-      Next
-    </NuxtLink>
-  </div>
+  <NuxtLayout
+    name="projects"
+    :path="`search?q=${route.query.q}`"
+    :projects="results"
+    :pending="pending"
+  >
+    <h1>Results for "{{ route.query.q }}"</h1>
+  </NuxtLayout>
 </template>
-<style>
-body.search-page main {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.search-content {
-  width: 65rem;
-  display: flex;
-  flex-wrap: wrap;
-  padding: 1rem 0;
-  gap: 1rem;
-}
-
-.page-controls {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  font-weight: bold;
-
-  & a {
-    background: var(--color-primary);
-    border: none;
-    color: var(--color-primary-text);
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    font-weight: bold;
-    text-decoration: none;
-  }
-}
-</style>

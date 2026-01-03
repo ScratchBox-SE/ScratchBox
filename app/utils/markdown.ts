@@ -29,10 +29,16 @@ md.render = (markdown, env) => {
       "li",
       "blockquote",
       "p",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
     ],
-    allowedAttributes: { "a": ["href", "target"], "code": ["class"] },
+    allowedAttributes: { a: ["href", "target"], code: ["class"] },
     transformTags: {
-      "a": (tagName, attribs) => {
+      a: (tagName, attribs) => {
         if (attribs.href && attribs.href.startsWith("http")) {
           attribs.target = "_blank";
           attribs.rel = "noopener noreferrer";

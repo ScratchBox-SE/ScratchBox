@@ -48,19 +48,15 @@ useHead({
 </template>
 <style>
 body.rules-page main {
+  max-width: 1024px;
   display: grid;
   place-content: center;
-}
-
-main, body, html {
-  height: calc(100vh - 4rem);
 }
 
 .rules {
   background: var(--color-secondary-background);
   padding: 2rem;
   border-radius: 2rem;
-  width: 65rem;
 
   & h2 {
     margin-bottom: 0.5rem;

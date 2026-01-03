@@ -11,13 +11,17 @@ const dialogRef = useTemplateRef("dialogRef");
 
 const emit = defineEmits(["update:open"]);
 
-watch(() => props.open, (open) => {
-  if (open) {
-    dialogRef.value?.showModal();
-  } else {
-    dialogRef.value?.close();
-  }
-}, { immediate: true });
+watch(
+  () => props.open,
+  (open) => {
+    if (open) {
+      dialogRef.value?.showModal();
+    } else {
+      dialogRef.value?.close();
+    }
+  },
+  { immediate: true },
+);
 
 onMounted(() => {
   if (props.open) {
@@ -30,20 +34,23 @@ const handleClick = (e: MouseEvent) => {
   if (!rect) return;
 
   if (
-    e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top ||
+    e.clientX < rect.left ||
+    e.clientX > rect.right ||
+    e.clientY < rect.top ||
     e.clientY > rect.bottom
-  ) emit("update:open", false);
+  )
+    emit("update:open", false);
 };
 </script>
 <template>
   <dialog
     ref="dialogRef"
-    @cancel.prevent='emit("update:open", false)'
+    @cancel.prevent="emit('update:open', false)"
     @click="handleClick"
   >
     <header>
       <h3 v-if="props.title">{{ props.title }}</h3>
-      <Icon name="ri:close-circle-fill" @click='emit("update:open", false)' />
+      <Icon name="ri:close-circle-fill" @click="emit('update:open', false)" />
     </header>
     <div class="content">
       <slot />
@@ -58,11 +65,10 @@ dialog {
   left: 50vw;
   top: 50vh;
   translate: -50% -50%;
-  box-shadow: rgba(0, 0, 0, 0.1) 0 0 0.25rem 0.25rem;
+  box-shadow: rgba(0, 0, 0, 0.125) 0 0 0.25rem 0.25rem;
   border-radius: 1rem;
   min-width: 20rem;
-  min-height: 10rem;
-  padding: 1.25rem;
+  padding: 1rem 1.125rem;
 
   & * {
     color: var(--color-text) !important;
@@ -72,6 +78,7 @@ dialog {
     display: flex;
     position: relative;
     margin-bottom: 0.75rem;
+    align-items: center;
 
     & > span {
       position: absolute;
@@ -87,28 +94,30 @@ dialog {
   .content {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 1rem;
+    font-weight: unset;
 
     & input {
       background-color: var(--color-background);
       border: none;
+      outline: none;
       padding: 0.5rem;
       border-radius: 0.5rem;
-      border: 2px solid var(--color-background);
 
       &:focus {
-        outline: none;
-        border-color: var(--color-primary);
+        outline: 2px solid var(--color-primary);
       }
     }
 
     & button {
       background-color: var(--color-primary);
-      padding: 0.5rem;
+      padding: 0.4375rem 0.5rem;
       color: var(--color-primary-text) !important;
       border: none;
       border-radius: 0.5rem;
       cursor: pointer;
+      font-size: 0.875rem;
+      align-self: flex-end;
     }
   }
 }
