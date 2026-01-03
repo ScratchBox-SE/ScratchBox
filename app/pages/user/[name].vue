@@ -94,7 +94,7 @@ body.profile-page main {
 
 .user-projects {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
   justify-content: center;
   gap: 1rem;
 }
