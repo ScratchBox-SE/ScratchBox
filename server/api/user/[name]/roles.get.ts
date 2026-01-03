@@ -1,7 +1,7 @@
 import { db } from "../../../utils/drizzle";
 import * as schema from "../../../database/schema";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { eq } from "drizzle-orm";
+import { eq, gt, and, or, isNull } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const user = getRouterParam(event, "name") as string;
@@ -27,7 +27,10 @@ export default defineEventHandler(async (event) => {
     await db
       .select({role: schema.userRoles.role})
       .from(schema.userRoles)
-      .where(eq(schema.userRoles.user, user))
+      .where(and(eq(schema.userRoles.user, user), or(
+        isNull(schema.userRoles.expiresAt),
+        gt(schema.userRoles.expiresAt, new Date())
+      )))
   ).map(r => r.role);
 
   // prevent non-admin users from accessing other people's data

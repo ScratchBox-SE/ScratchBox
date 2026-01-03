@@ -41,7 +41,10 @@ const formState = reactive<RoleFormState>({
   successMessage: "",
 });
 
-const submitRole = async () => {
+const submitRole = async (remove: boolean) => {
+  formState.errorMessage = "";
+  formState.successMessage = "";
+
   if (!formState.targetUsername.trim()) {
     formState.errorMessage = "Please enter a username";
     return;
@@ -55,19 +58,25 @@ const submitRole = async () => {
   formState.errorMessage = "";
   formState.successMessage = "";
 
+  let res;
   try {
-    await $fetch(`/api/user/${formState.targetUsername}/roles`, {
-      method: "POST",
+    res = await $fetch(`/api/user/${formState.targetUsername}/roles`, {
+      method: remove ? "DELETE" : "POST",
       headers: useRequestHeaders(["cookie"]),
       body: {role: formState.selectedRole},
     });
-    formState.errorMessage = "";
-    formState.successMessage = `Successfully assigned ${formState.selectedRole} role to ${formState.targetUsername}`;
-    formState.targetUsername = "";
-    formState.selectedRole = "";
+    if (res) {
+      formState.successMessage = `Successfully ${remove ? "removed" : "assigned"} '${formState.selectedRole}' role for ${formState.targetUsername}`;
+      formState.targetUsername = "";
+      formState.selectedRole = "";
+    }
+    else {
+      formState.errorMessage = remove
+        ? `${formState.targetUsername} does not have the '${formState.selectedRole}' role`
+        : `Failed to assign role`;
+    }
   } catch {
-    formState.successMessage = "";
-    formState.errorMessage = "Failed to assign role";
+    formState.errorMessage = `Failed to ${remove ? "remove" : "assign"} role`;
   } finally {
     formState.isLoading = false;
   }
@@ -75,45 +84,71 @@ const submitRole = async () => {
 
 </script>
 <template>
-  <h1>Admin Panel</h1>
+  <section class="container">
+    <h1>Admin Panel</h1>
 
-  <section id="user-mod-section">
-    <input 
-      v-model="formState.targetUsername" 
-      placeholder="Username" 
-      :disabled="formState.isLoading"
-    />
-    <select 
-      v-model="formState.selectedRole"
-      :disabled="formState.isLoading"
-    >
-      <option value="" disabled>Please select</option>
-      <option value="admin">Admin</option>
-      <option value="banned">Banned</option>
-    </select>
-    <button @click="submitRole" :disabled="formState.isLoading">
-      <Icon name="ri:send-fill" /> Submit
-    </button>
+    <h3>Modify roles</h3>
+    <section class="user-mod-section">
+      <input
+        v-model="formState.targetUsername"
+        placeholder="Username"
+        :disabled="formState.isLoading"
+      />
+      <select
+        v-model="formState.selectedRole"
+        :disabled="formState.isLoading"
+      >
+        <option value="" disabled>Please select</option>
+        <option value="admin">Admin</option>
+        <option value="banned">Banned</option>
+      </select>
+      <button @click="submitRole(false)" :disabled="formState.isLoading">
+        <Icon name="ri:send-fill" /> Add
+      </button>
+      <button @click="submitRole(true)" :disabled="formState.isLoading">
+        <Icon name="ri:send-fill" /> Remove
+      </button>
+    </section>
+
+    <div v-if="formState.errorMessage" class="message error">
+      {{ formState.errorMessage }}
+    </div>
+    <div v-if="formState.successMessage" class="message success">
+      {{ formState.successMessage }}
+    </div>
   </section>
-
-  <div v-if="formState.errorMessage" class="message error">
-    {{ formState.errorMessage }}
-  </div>
-  <div v-if="formState.successMessage" class="message success">
-    {{ formState.successMessage }}
-  </div>
 </template>
 <style>
-  input, select, button {
+  main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  input, select, option {
     padding: 0.25rem;
     border-radius: 0.25rem;
     font-size: 1rem;
+    color: black;
   }
   button {
-    background-color: cornflowerblue;
+    padding: 0.25rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 1rem;
+    background-color: var(--color-primary);
+    color: var(--color-primary-text);
   }
 
-  #user-mod-section {
+  .container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem 0;
+    width: 65rem;
+  }
+
+  .user-mod-section {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -125,9 +160,9 @@ const submitRole = async () => {
     border-radius: 0.25rem;
   }
   .message.error {
-    color: #c33;
+    color: var(--color-error);
   }
   .message.success {
-    color: #3c3;
+    color: var(--color-success);
   }
 </style>

@@ -1,7 +1,7 @@
 import { db } from "../../../utils/drizzle";
 import * as schema from "../../../database/schema";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { eq } from "drizzle-orm";
+import { eq, and, or, isNull, gt } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const user = getRouterParam(event, "name") as string;
@@ -39,33 +39,28 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  let body: {
-    role: string;
-    expiresAt?: number | null;
-    description?: string | null;
-  };
-  try {
-    body = JSON.parse((await readRawBody(event)) as string);
-  } catch {
+  const role: string = (JSON.parse(await readRawBody(event) as string)).role;
+  if (!role) {
     throw createError({
       statusCode: 400,
-      statusMessage: "Invalid body structure"
-    });
-  }
-  if (!body) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "No request body provided",
+      statusMessage: "No role provided",
     });
   }
 
-  const { role, expiresAt, description } = body;
-  const result = await db.insert(schema.userRoles).values({
-    user,
-    role,
-    expiresAt: expiresAt ? new Date(expiresAt) : null,
-    description
-  });
-  
-  return result.lastInsertRowid;
+  // set expiresAt to now
+  // means role is no longer active but we still have ban history
+  const result = await db
+    .update(schema.userRoles).set({ expiresAt: new Date() })
+    .where(
+      and(
+        eq(schema.userRoles.user, user),
+        eq(schema.userRoles.role, role),
+        or(
+          isNull(schema.userRoles.expiresAt),
+          gt(schema.userRoles.expiresAt, new Date())
+        ),
+      )
+    );
+
+  return result.changes > 0;
 });
