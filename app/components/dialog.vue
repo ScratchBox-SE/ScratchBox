@@ -111,7 +111,7 @@ dialog {
 
     & button {
       background-color: var(--color-primary);
-      padding: 0.4375rem 0.5rem;
+      padding: 0.5rem;
       color: var(--color-primary-text) !important;
       border: none;
       border-radius: 0.5rem;

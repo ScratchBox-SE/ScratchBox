@@ -738,7 +738,7 @@ a.download {
   background: var(--color-primary);
   border: none;
   font-size: 0.875rem;
-  padding: 0.4375rem 0.5rem;
+  padding: 0.5rem;
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
