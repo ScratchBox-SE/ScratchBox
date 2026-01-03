@@ -1,5 +1,6 @@
 <script setup lang="ts">
 useHead({
+  title: "Rules - ScratchBox",
   bodyAttrs: {
     class: "rules-page",
   },
