@@ -1,7 +1,7 @@
 import { db } from "../../../utils/drizzle";
 import * as schema from "../../../database/schema";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const user = getRouterParam(event, "name") as string;
@@ -67,12 +67,21 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const result = await db.insert(schema.userRoles).values({
-    user,
-    role,
-    expiresAt: expiresAt ? new Date(expiresAt) : null,
-    description
-  });
+  const result = await db.insert(schema.userRoles)
+    .values({
+      user,
+      role,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
+      description,
+    })
+    .onConflictDoUpdate({
+      target: [schema.userRoles.user, schema.userRoles.role],
+      set: {
+        addedAt: new Date(),
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        description,
+      }
+    });
   
-  return result.lastInsertRowid;
+  return true;
 });

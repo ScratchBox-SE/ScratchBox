@@ -194,7 +194,7 @@ const formatExpiryDate = (dateString: string) => {
           </span>
         </div>
 
-        <button @click="setSelectedRole(i)">
+        <button v-if="!(role.user == user.username && role.role == 'admin')" @click="setSelectedRole(i)">
           <Icon name="ri:delete-bin-line" size="20" style="color: white;" />
         </button>
       </div>
