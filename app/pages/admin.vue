@@ -233,7 +233,14 @@ const formatExpiryDate = (dateString: string) => {
     padding: 0.25rem;
     border-radius: 0.25rem;
     font-size: 1rem;
-    color: black;
+    color: var(--color-text);
+    background-color: var(--color-background);
+    border: 2px solid var(--color-background);
+  }
+
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--color-primary);
   }
   button {
     padding: 0.25rem;
@@ -272,7 +279,7 @@ const formatExpiryDate = (dateString: string) => {
     margin-top: 1rem;
     border: 0.25rem solid var(--color-secondary-background);
     border-radius: 0.5rem;
-    background-color: var(--color-primary-text);
+    background-color: var(--color-card-background);
     padding: 1rem;
 
     & .role-text {
