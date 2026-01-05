@@ -5,7 +5,7 @@
     "": {
       "name": "nuxt-app",
       "dependencies": {
-        "@iconify-json/ri": "^1.2.6",
+        "@iconify-json/ri": "^1.2.7",
         "@nuxt/fonts": "0.12.1",
         "@nuxt/icon": "2.1.1",
         "@nuxt/image": "2.0.0",
@@ -168,7 +168,7 @@
 
     "@fastify/busboy": ["@fastify/busboy@3.2.0", "", {}, "sha512-m9FVDXU3GT2ITSe0UaMA5rU3QkfC/UXtCU8y0gSN/GugTqtVldOBWIB5V6V3sbmenVZUIpU6f+mPEO2+m5iTaA=="],
 
-    "@iconify-json/ri": ["@iconify-json/ri@1.2.6", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-tGXRmXtb8oFu8DNg9MsS1pywKFgs9QZ4U6LBzUamBHaw3ePSiPd7ouE64gzHzfEcR16hgVaXoUa+XxD3BB0XOg=="],
+    "@iconify-json/ri": ["@iconify-json/ri@1.2.7", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-j/Fkb8GlWY5y/zLj1BGxWRtDzuJFrI7562zLw+iQVEykieBgew43+r8qAvtSajvb75MfUIHjsNOYQPRD8FfLfw=="],
 
     "@iconify/collections": ["@iconify/collections@1.0.629", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-1iT8HyMKpOvml6jxZDaW2dkdgzls4Ik7I/tn79hHqbPGWkNpIQsJSB3Dto+vAyboXLtsRvIKIwtSvfgrHR0HRw=="],
 
