@@ -58,8 +58,15 @@ export default defineEventHandler(async (event) => {
       statusMessage: "No request body provided",
     });
   }
-
   const { role, expiresAt, description } = body;
+
+  if (expiresAt && new Date(expiresAt).getTime() < Date.now()) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Expiry date cannot be in the past",
+    });
+  }
+
   const result = await db.insert(schema.userRoles).values({
     user,
     role,

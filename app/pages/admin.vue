@@ -69,16 +69,30 @@ const setSelectedRole = (index: number) => {
 interface RoleFormState {
   targetUsername: string;
   selectedRole: string;
+  expiryDate: number | null;
   isLoading: boolean;
   errorMessage: string;
+  description: string;
 }
 
 const formState = reactive<RoleFormState>({
   targetUsername: "",
   selectedRole: "",
+  expiryDate: null,
+  description: "",
   isLoading: false,
   errorMessage: "",
 });
+
+const resetForm = () => {
+  formState.targetUsername = "";
+  formState.selectedRole = "";
+  formState.expiryDate = null;
+  formState.description = "";
+  createFormOpen.value = false;
+  deleteForm.value = null;
+  formState.errorMessage = "";
+};
 
 const submitRole = async (remove: boolean) => {
   formState.errorMessage = "";
@@ -91,32 +105,32 @@ const submitRole = async (remove: boolean) => {
     formState.errorMessage = "Please select a role";
     return;
   }
+  if (formState.expiryDate && new Date(formState.expiryDate).getTime() < Date.now()) {
+    formState.errorMessage = "Expiry date cannot be in the past";
+    return;
+  }
 
   formState.isLoading = true;
-  formState.errorMessage = "";
 
   let res;
   try {
     res = await $fetch(`/api/user/${formState.targetUsername}/roles`, {
       method: remove ? "DELETE" : "POST",
       headers: useRequestHeaders(["cookie"]),
-      body: {role: formState.selectedRole},
+      body: {role: formState.selectedRole, expiresAt: formState.expiryDate, description: formState.description},
     });
     if (res) {
-      if (deleteForm.value !== null) {
+      if (deleteFormOpen.value) {
         allRoles.value.splice(deleteForm.value, 1);
-        deleteForm.value = null;
       } else if (createFormOpen.value) {
-        // Refetch to get complete data from server
+        // Refetch (for now)
+        // TODO: update changed instead of refetching all
         allRoles.value = await $fetch<RoleReturn[]>("/api/user/roles", {
           method: "GET",
           headers: useRequestHeaders(["cookie"]),
         });
-        createFormOpen.value = false;
       }
-
-      formState.targetUsername = "";
-      formState.selectedRole = "";
+      resetForm();
     }
     else {
       formState.errorMessage = remove
@@ -128,6 +142,27 @@ const submitRole = async (remove: boolean) => {
   } finally {
     formState.isLoading = false;
   }
+};
+
+const formatExpiryDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const day = date.getDate();
+  const getDaySuffix = (d: number) => {
+    if (d > 3 && d < 21) return "th";
+    switch (d % 10) {
+      case 1: return "st";
+      case 2: return "nd";
+      case 3: return "rd";
+      default: return "th";
+    }
+  };
+  const month = date.toLocaleDateString(undefined, { month: "long" });
+  const year = date.getFullYear();
+  const hours = date.getHours() % 12 || 12;
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const ampm = date.getHours() >= 12 ? "PM" : "AM";
+  
+  return `${day}${getDaySuffix(day)} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
 };
 
 </script>
@@ -150,33 +185,12 @@ const submitRole = async (remove: boolean) => {
 
           <span v-if="role.expiresAt" class="flex-row">
             <p>until</p>
-            <p class="role-text">{{
-              (() => {
-                const date = new Date(role.expiresAt);
-                const weekday = date.toLocaleDateString(undefined, { weekday: "long" });
-                const day = date.getDate();
-                const getDaySuffix = (d: number) => {
-                  if (d > 3 && d < 21) return "th";
-                  switch (d % 10) {
-                    case 1: return "st";
-                    case 2: return "nd";
-                    case 3: return "rd";
-                    default: return "th";
-                  }
-                };
-                const suffix = getDaySuffix(day);
-                const month = date.toLocaleDateString(undefined, { month: "long" });
-                const year = date.getFullYear();
+            <p class="role-text">{{ formatExpiryDate(role.expiresAt) }}</p>
+          </span>
 
-                let hours = date.getHours();
-                const minutes = date.getMinutes().toString().padStart(2, "0");
-                const ampm = hours >= 12 ? "PM" : "AM";
-                hours = hours % 12;
-                hours = hours ? hours : 12; // the hour '0' should be '12'
-
-                return `${weekday} ${day}${suffix} ${month} ${year} at ${hours}:${minutes} ${ampm}`;
-              })()
-            }}</p>
+          <span v-if="role.description" class="flex-row">
+            <p>due to</p>
+            <p class="role-text">{{ role.description }}</p>
           </span>
         </div>
 
@@ -187,20 +201,26 @@ const submitRole = async (remove: boolean) => {
     </section>
   </section>
 
-  <Dialog title="Remove Role" v-model:open="deleteFormOpen" v-on:update:open="deleteForm = null">
+  <Dialog title="Remove Role" v-model:open="deleteFormOpen" v-on:update:open="resetForm">
     <button @click="submitRole(true)">Confirm</button>
-    <p>{{ formState.errorMessage }}</p>
+    <p class="message error" v-if="formState.errorMessage">{{ formState.errorMessage }}</p>
   </Dialog>
 
-  <Dialog title="Add Role" v-model:open="createFormOpen" v-on:update:open="createFormOpen = false">
-    <input v-model="formState.targetUsername" />
-    <select v-model="formState.selectedRole">
+  <Dialog title="Add Role" v-model:open="createFormOpen" v-on:update:open="resetForm">
+    <label for="targetUsername">Username <span class="required">*</span></label>
+    <input v-model="formState.targetUsername" id="targetUsername" />
+    <label for="selectedRole">Role <span class="required">*</span></label>
+    <select v-model="formState.selectedRole" id="selectedRole">
       <option value="banned">Banned</option>
       <option value="admin">Admin</option>
     </select>
 
+    <label for="expiryDate">Expires At</label>
+    <input type="date" v-model="formState.expiryDate" id="expiryDate" />
+    <label for="description">Reason</label>
+    <input type="text" v-model="formState.description" id="description" />
     <button @click="submitRole(false)">Create Role</button>
-    <p>{{ formState.errorMessage }}</p>
+    <p class="message error" v-if="formState.errorMessage">{{ formState.errorMessage }}</p>
   </Dialog>
 </template>
 <style>
@@ -223,6 +243,10 @@ const submitRole = async (remove: boolean) => {
     font-size: 1rem;
     background-color: var(--color-primary);
     color: var(--color-primary-text);
+  }
+
+  .required {
+    color: var(--color-error) !important;
   }
 
   .flex-row {
@@ -302,10 +326,9 @@ const submitRole = async (remove: boolean) => {
     border-radius: 0.25rem;
   }
   .message.error {
-    color: var(--color-error);
-  }
-  .message.success {
-    color: var(--color-success);
+    color: var(--color-error) !important;
+    text-align: center;
+    background-color: var(--color-error-background);
   }
 
   #add-button {

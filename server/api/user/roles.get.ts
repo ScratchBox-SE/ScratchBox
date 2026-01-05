@@ -32,7 +32,12 @@ export default defineEventHandler(async (event) => {
   }
 
   const roles = await db
-    .select({ user: schema.userRoles.user, role: schema.userRoles.role, expiresAt: schema.userRoles.expiresAt })
+    .select({
+      user: schema.userRoles.user,
+      role: schema.userRoles.role,
+      expiresAt: schema.userRoles.expiresAt,
+      description: schema.userRoles.description,
+    })
     .from(schema.userRoles)
     .where(or(
       isNull(schema.userRoles.expiresAt),

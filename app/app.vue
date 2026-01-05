@@ -45,6 +45,7 @@ body.theme-light {
   --color-blockquote: #d4d4d4;
   --color-success: #3c3;
   --color-error: #c33;
+  --color-error-background: #fcc;
 }
 
 body.theme-dark {
@@ -56,5 +57,6 @@ body.theme-dark {
   --color-blockquote: #333;
   --color-success: #3c3;
   --color-error: #c33;
+  --color-error-background: #422;
 }
 </style>
