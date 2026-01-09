@@ -1,18 +1,27 @@
 <script setup lang="ts">
 const route = useRoute();
 
-const projects = await $fetch<
-  {
-    public: { name: string; description: string; id: string }[];
-    private?: { name: string; description: string; id: string }[];
-  }
->(`/api/user/${route.params.name}/projects`, {
+const projects = await $fetch<{
+  public: { name: string; description: string; id: string }[];
+  private?: { name: string; description: string; id: string }[];
+}>(`/api/user/${route.params.name}/projects`, {
   headers: useRequestHeaders(["cookie"]),
 });
 
 const profilePicture = await getProfilePicture(route.params.name as string);
 
 useHead({
+  title: `${projects.private ? "Your" : `${route.params.name}'s`} Profile - ScratchBox`,
+  meta: [
+    { name: "description", content: null },
+    { property: "og:title", content: `${route.params.name}'s Profile` },
+    { property: "og:description", content: null },
+    {
+      property: "og:image",
+      content: profilePicture,
+    },
+    { name: "twitter:card", content: "summary" },
+  ],
   bodyAttrs: {
     class: "profile-page",
   },
@@ -21,9 +30,8 @@ useHead({
 <template>
   <div class="profile">
     <h1>
-      <img :src="profilePicture as string" /> {{
-        projects.private ? "Your" : `${route.params.name}'s`
-      }} Profile
+      <img :src="profilePicture as string" />
+      {{ projects.private ? "Your" : `${route.params.name}'s` }} Profile
     </h1>
     <p v-if="projects.private === undefined && projects.public.length === 0">
       {{ route.params.name }} doesn't have any public projects yet.
@@ -40,11 +48,7 @@ useHead({
           <Project
             v-for="project in projects.public"
             :name="project.name"
-            :description='
-              project.description.length > 75
-                ? project.description.slice(0, 75) + "..."
-                : project.description
-            '
+            :description="project.description"
             :id="project.id"
           />
         </div>
@@ -55,11 +59,7 @@ useHead({
           <Project
             v-for="project in projects.private"
             :name="project.name"
-            :description='
-              project.description.length > 75
-                ? project.description.slice(0, 75) + "..."
-                : project.description
-            '
+            :description="project.description"
             :id="project.id"
           />
         </div>
@@ -74,8 +74,7 @@ body.profile-page main {
 }
 
 .profile {
-  padding: 1rem 0;
-  width: 65rem;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -83,18 +82,26 @@ body.profile-page main {
   & h1 {
     display: flex;
     align-items: center;
-    gap: 0.5ch;
-    margin-bottom: 2rem;
+    gap: 1rem;
+    margin-bottom: 1rem;
 
     & img {
-      border-radius: 0.75rem;
-      height: 3rem;
+      border-radius: 1rem;
+      height: 4rem;
     }
   }
 }
 
 .user-projects {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  justify-content: center;
   gap: 1rem;
+}
+
+@media (max-width: 912px) {
+  .profile h1 {
+    margin-bottom: 0.5rem;
+  }
 }
 </style>
