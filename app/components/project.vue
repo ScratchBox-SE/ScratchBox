@@ -3,23 +3,24 @@ const props = defineProps<{ name: string; description: string; id: string }>();
 </script>
 <template>
   <NuxtLink :to="`/project/${props.id}`" class="project-card">
-    <object
-      :data="`/api/project/${props.id}/thumbnail`"
-      type="image/png"
-    >
+    <object :data="`/api/project/${props.id}/thumbnail`" type="image/png">
       <nuxt-img src="/default-thumbnail.png" />
     </object>
     <h2>{{ props.name }}</h2>
     <MarkdownText
-      v-if='props.description !== ""'
-      :markdown="props.description"
+      v-if="props.description !== ''"
+      style="margin-bottom: -1rem"
+      :markdown="
+        props.description.length > 90
+          ? props.description.slice(0, 90) + '...'
+          : props.description
+      "
     />
   </NuxtLink>
 </template>
 <style>
 .project-card {
   background: var(--color-secondary-background);
-  width: calc(65rem / 3 - 1rem * 3);
   color: var(--color-text);
   font-weight: unset;
   text-decoration: none;
@@ -27,9 +28,19 @@ const props = defineProps<{ name: string; description: string; id: string }>();
   border-radius: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.25rem;
+  transition: 50ms background ease-in-out;
 
-  & object, & img {
+  &:hover {
+    background: color-mix(
+      in srgb,
+      rgba(0, 0, 0, 0.125),
+      var(--color-secondary-background)
+    );
+  }
+
+  & object,
+  & img {
     width: 100%;
     border-radius: 1rem;
   }

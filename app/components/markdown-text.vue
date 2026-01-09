@@ -9,12 +9,14 @@ const renderedMarkdown = computed(() => md.render(props.markdown));
   <div class="mdtext" v-html="renderedMarkdown"></div>
 </template>
 <style>
-*:not(pre) > code, pre {
+*:not(pre) > code,
+pre {
   background: var(--color-secondary-background);
   padding: 0.25rem;
   border-radius: 0.25rem;
 
-  &, & * {
+  &,
+  & * {
     font-family: monospace;
   }
 }
