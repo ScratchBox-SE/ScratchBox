@@ -15,14 +15,6 @@ export default defineEventHandler(async (event) => {
     return [];
   }
 
-  const tokenUser = typeof decoded !== "string" ? decoded.username : null;
-  const tokenRoles = typeof decoded !== "string" ? (
-    await db
-      .select({role: schema.userRoles.role})
-      .from(schema.userRoles)
-      .where(eq(schema.userRoles.user, tokenUser))
-  ).map(r => r.role) : [];
-
   const roles = (
     await db
       .select({role: schema.userRoles.role})
@@ -32,14 +24,6 @@ export default defineEventHandler(async (event) => {
         gt(schema.userRoles.expiresAt, new Date())
       )))
   ).map(r => r.role);
-
-  // prevent non-admin users from accessing other people's data
-  if (!tokenRoles.includes("admin") && user !== tokenUser) {
-    throw createError({
-      statusCode: 403,
-      statusMessage: "Forbidden"
-    });
-  }
 
   return roles;
 });

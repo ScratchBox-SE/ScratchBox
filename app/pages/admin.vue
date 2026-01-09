@@ -29,6 +29,7 @@ interface RoleReturn {
   role: string;
   user: string;
   expiresAt: string | null;
+  description: string | null;
 }
 
 const allRoles = ref<RoleReturn[]>(await $fetch<RoleReturn[]>("/api/user/roles", {
@@ -121,14 +122,20 @@ const submitRole = async (remove: boolean) => {
     });
     if (res) {
       if (deleteFormOpen.value) {
-        allRoles.value.splice(deleteForm.value, 1);
+        const deletedIndex = deleteForm.value!;
+        allRoles.value.splice(deletedIndex, 1);
+        roleProfiles.value.splice(deletedIndex, 1);
       } else if (createFormOpen.value) {
-        // Refetch (for now)
-        // TODO: update changed instead of refetching all
-        allRoles.value = await $fetch<RoleReturn[]>("/api/user/roles", {
-          method: "GET",
-          headers: useRequestHeaders(["cookie"]),
-        });
+        const newRole: RoleReturn = {
+          role: formState.selectedRole,
+          user: formState.targetUsername,
+          expiresAt: formState.expiryDate ? new Date(formState.expiryDate).toISOString() : null,
+          description: formState.description || null,
+        };
+        allRoles.value.push(newRole);
+
+        const profilePic = await getProfilePicture(formState.targetUsername).catch(() => null);
+        roleProfiles.value.push(profilePic as string);
       }
       resetForm();
     }
