@@ -304,7 +304,7 @@ const formatExpiryDate = computed(() => {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     margin-top: 1rem;
     border: 0.25rem solid var(--color-secondary-background);
     border-radius: 0.5rem;
