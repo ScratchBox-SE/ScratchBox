@@ -167,6 +167,7 @@ onUnmounted(() => {
           </template>
           <NuxtLink v-else :to="editorURL">Create</NuxtLink>
           <NuxtLink to="/explore">Explore</NuxtLink>
+          <NuxtLink v-if="userRoles.includes('admin')" to="/admin">Moderate</NuxtLink>
           <div class="dropdown" v-if="user.loggedIn">
             <a
               href="javascript:void(0);"

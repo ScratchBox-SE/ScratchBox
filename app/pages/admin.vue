@@ -151,26 +151,47 @@ const submitRole = async (remove: boolean) => {
   }
 };
 
-const formatExpiryDate = (dateString: string) => {
-  const date = new Date(dateString);
-  const day = date.getDate();
-  const getDaySuffix = (d: number) => {
-    if (d > 3 && d < 21) return "th";
-    switch (d % 10) {
-      case 1: return "st";
-      case 2: return "nd";
-      case 3: return "rd";
-      default: return "th";
-    }
+const isSmallScreen = ref(false);
+
+if (import.meta.client) {
+  const updateScreenSize = () => {
+    isSmallScreen.value = window.innerWidth < 480;
   };
-  const month = date.toLocaleDateString(undefined, { month: "long" });
-  const year = date.getFullYear();
-  const hours = date.getHours() % 12 || 12;
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  const ampm = date.getHours() >= 12 ? "PM" : "AM";
   
-  return `${day}${getDaySuffix(day)} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
-};
+  onMounted(() => {
+    updateScreenSize();
+    window.addEventListener("resize", updateScreenSize);
+  });
+  
+  onUnmounted(() => {
+    window.removeEventListener("resize", updateScreenSize);
+  });
+}
+
+const formatExpiryDate = computed(() => {
+  return (dateString: string) => {
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const getDaySuffix = (d: number) => {
+      if (d > 3 && d < 21) return "th";
+      switch (d % 10) {
+        case 1: return "st";
+        case 2: return "nd";
+        case 3: return "rd";
+        default: return "th";
+      }
+    };
+    const month = isSmallScreen.value 
+      ? date.toLocaleDateString(undefined, { month: "short" })
+      : date.toLocaleDateString(undefined, { month: "long" });
+    const year = date.getFullYear();
+    const hours = date.getHours() % 12 || 12;
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const ampm = date.getHours() >= 12 ? "PM" : "AM";
+    
+    return `${day}${getDaySuffix(day)} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
+  };
+});
 
 </script>
 <template>
@@ -274,20 +295,22 @@ const formatExpiryDate = (dateString: string) => {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    padding: 1rem 0;
-    width: 65rem;
+    padding: 1rem;
+    width: 100%;
+    max-width: 65rem;
   }
 
   .role-card {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-top: 1rem;
     border: 0.25rem solid var(--color-secondary-background);
     border-radius: 0.5rem;
     background-color: var(--color-card-background);
     padding: 1rem;
+    position: relative;
 
     & .role-text {
       background-color: var(--color-secondary-background);
@@ -295,6 +318,7 @@ const formatExpiryDate = (dateString: string) => {
       padding-left: 0.5rem;
       padding-right: 0.5rem;
       border-radius: 0.25rem;
+      white-space: nowrap;
     }
 
     & .role-profile {
@@ -302,6 +326,7 @@ const formatExpiryDate = (dateString: string) => {
       flex-direction: row;
       gap: 0.5rem;
       align-items: center;
+      white-space: nowrap;
 
       & img {
         width: 3rem;
@@ -315,6 +340,8 @@ const formatExpiryDate = (dateString: string) => {
       flex-direction: row;
       align-items: center;
       gap: 0.5rem;
+      flex: 1;
+      min-width: 0;
       
       & p {
         height: fit-content;
@@ -331,6 +358,8 @@ const formatExpiryDate = (dateString: string) => {
       cursor: pointer;
       border: none;
       background-color: var(--color-error);
+      flex-shrink: 0;
+      margin-left: 1rem;
     }
   }
 
@@ -356,5 +385,45 @@ const formatExpiryDate = (dateString: string) => {
     margin-top: 0.75rem;
     color: var(--color-primary-text);
     cursor: pointer;
+  }
+
+  @media (max-width: 912px) {
+    .container {
+      padding: 0.5rem;
+    }
+
+    .role-card {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+
+      & .user-details {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        flex: 1;
+        min-width: 0;
+
+        & > .role-profile {
+          flex-shrink: 0;
+        }
+
+        & > .role-text {
+          flex-shrink: 0;
+        }
+
+        & > .flex-row {
+          flex-basis: 100%;
+          margin-top: 0.25rem;
+          width: 100%;
+        }
+      }
+
+      & button {
+        position: static;
+        margin-left: 1rem;
+      }
+    }
   }
 </style>
