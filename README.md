@@ -34,8 +34,8 @@ A WIP project hosting/distribution platform for Scratch Everywhere!
   - [ ] Reports
     - [ ] Comments
     - [ ] Projects
-  - [ ] Admin/Mod dashboard
-  - [ ] Easy way to make people mods/admins
+  - [x] Admin/Mod dashboard
+  - [x] Easy way to make people mods/admins
   - [ ] Allow mods to edit project info
     - [ ] Make them give a reason
 - [x] TOS/Rules

@@ -74,6 +74,9 @@ body.theme-light {
   --color-primary-text: #fff;
   --color-text: #000;
   --color-blockquote: #d4d4d4;
+  --color-error: #c33;
+  --color-error-background: #fcc;
+  --color-card-background: #fff;
 }
 
 body.theme-dark {
@@ -83,6 +86,9 @@ body.theme-dark {
   --color-primary-text: #fff;
   --color-text: #ccc;
   --color-blockquote: #333;
+  --color-error: #c33;
+  --color-error-background: #422;
+  --color-card-background: #2c2c2c;
 }
 
 .fade-enter-active,

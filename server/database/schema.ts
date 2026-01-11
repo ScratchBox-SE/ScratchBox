@@ -44,3 +44,17 @@ export const projectComments = sqliteTable("project_comments", {
 export const unistoreData = sqliteTable("unistore_data", {
   revision: integer("revision").notNull(),
 });
+
+export const userRoles = sqliteTable("user_roles", {
+  user: text("user").notNull(),
+  role: text("role").notNull(),
+  addedAt: integer("added_at", { mode: "timestamp" }).default(
+    sql`(strftime('%s', 'now'))`,
+  ).notNull(),
+  
+  // optional fields for bans, but no reason they couldn't be used for other roles
+  expiresAt: integer("expires_at", { mode: "timestamp" }),
+  description: text("description"),
+}, (t) => [
+  primaryKey({ columns: [t.user, t.role] }),
+]);

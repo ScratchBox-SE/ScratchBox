@@ -40,6 +40,17 @@ const createProject = async () => {
   );
 };
 
+let userRoles: string[] = [];
+if (user.loggedIn) {
+  try {
+    const res = await $fetch(`/api/user/${user.username}/roles`, {
+      method: "GET",
+      headers: useRequestHeaders(["cookie"]),
+    });
+    userRoles = res ?? [];
+  } catch {}
+}
+
 const isDropdownOpen = ref(false);
 const dropdownRef = ref(null);
 
@@ -86,6 +97,7 @@ onUnmounted(() => {
       </template>
       <NuxtLink v-else :to="editorURL">Create</NuxtLink>
       <NuxtLink to="/explore">Explore</NuxtLink>
+      <NuxtLink v-if="userRoles.includes('admin')" to="/admin">Moderate</NuxtLink>
       <input
         type="search"
         placeholder="Search..."
@@ -155,6 +167,7 @@ onUnmounted(() => {
           </template>
           <NuxtLink v-else :to="editorURL">Create</NuxtLink>
           <NuxtLink to="/explore">Explore</NuxtLink>
+          <NuxtLink v-if="userRoles.includes('admin')" to="/admin">Moderate</NuxtLink>
           <div class="dropdown" v-if="user.loggedIn">
             <a
               href="javascript:void(0);"
