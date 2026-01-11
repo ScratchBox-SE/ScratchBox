@@ -59,7 +59,7 @@ A WIP project hosting/distribution platform for Scratch Everywhere!
 
 ## Post-Testing
 
-- [ ] Mobile/Small Screen Support
+- [x] Mobile/Small Screen Support
 - [ ] Support for (hosting) custom extensions (Once implemented in SE!)
 - [ ] Easy configuration and customizability
 - [ ] Multi-`.sb3` projects (for each platform)
