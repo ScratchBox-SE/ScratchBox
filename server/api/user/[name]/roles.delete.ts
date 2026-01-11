@@ -1,7 +1,7 @@
 import { db } from "../../../utils/drizzle";
 import * as schema from "../../../database/schema";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { eq, and, or, isNull, gt } from "drizzle-orm";
+import { and, eq, gt, isNull, or } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const user = getRouterParam(event, "name") as string;
@@ -25,12 +25,14 @@ export default defineEventHandler(async (event) => {
   }
 
   const tokenUser = typeof decoded !== "string" ? decoded.username : null;
-  const tokenRoles = typeof decoded !== "string" ? (
-    await db
-      .select({role: schema.userRoles.role})
-      .from(schema.userRoles)
-      .where(eq(schema.userRoles.user, tokenUser))
-  ).map(r => r.role) : [];
+  const tokenRoles = typeof decoded !== "string"
+    ? (
+      await db
+        .select({ role: schema.userRoles.role })
+        .from(schema.userRoles)
+        .where(eq(schema.userRoles.user, tokenUser))
+    ).map((r) => r.role)
+    : [];
 
   if (!tokenRoles.includes("admin")) {
     throw createError({
@@ -57,9 +59,9 @@ export default defineEventHandler(async (event) => {
         eq(schema.userRoles.role, role),
         or(
           isNull(schema.userRoles.expiresAt),
-          gt(schema.userRoles.expiresAt, new Date())
+          gt(schema.userRoles.expiresAt, new Date()),
         ),
-      )
+      ),
     );
 
   return result.changes > 0;

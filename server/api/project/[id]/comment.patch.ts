@@ -31,21 +31,23 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { id, originalId, content } = JSON.parse(body as string) as {id: number; originalId: number; content: string};
+  const { id, originalId, content } = JSON.parse(body as string) as {
+    id: number;
+    originalId: number;
+    content: string;
+  };
 
   if (!id) {
     throw createError({
       statusCode: 400,
       statusMessage: "No comment ID provided",
     });
-  }
-  else if (!content) {
+  } else if (!content) {
     throw createError({
       statusCode: 400,
       statusMessage: "No comment body provided",
     });
-  }
-  else if (content.length > 500) {
+  } else if (content.length > 500) {
     throw createError({
       statusCode: 413,
       statusMessage: "Comment body must be 500 characters or less",
@@ -53,13 +55,14 @@ export default defineEventHandler(async (event) => {
   }
 
   const commentAuthor = db.select({
-    user: schema.projectComments.user
-  }).from(schema.projectComments).where(eq(schema.projectComments.id, id)).get();
+    user: schema.projectComments.user,
+  }).from(schema.projectComments).where(eq(schema.projectComments.id, id))
+    .get();
 
   if (typeof decoded !== "string" && decoded.username !== commentAuthor?.user) {
     throw createError({
       statusCode: 403,
-      statusMessage: "Comment author does not match requesting user"
+      statusMessage: "Comment author does not match requesting user",
     });
   }
 

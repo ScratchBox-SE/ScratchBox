@@ -29,8 +29,7 @@ export default defineEventHandler(async (event) => {
       statusCode: 400,
       statusMessage: "No comment body provided",
     });
-  }
-  else if (content.length > 500) {
+  } else if (content.length > 500) {
     throw createError({
       statusCode: 413,
       statusMessage: "Comment body must be 500 characters or less",

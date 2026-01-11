@@ -1,6 +1,6 @@
 import { db } from "../../../utils/drizzle";
 import * as schema from "../../../database/schema";
-import { count, eq, desc } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const projectId = getRouterParam(event, "id") as string;
@@ -27,7 +27,8 @@ export default defineEventHandler(async (event) => {
   });
 
   const seenOriginalIds = new Set<number>();
-  const processedComments: Array<typeof allComments[0] & { edited: boolean }> = [];
+  const processedComments: Array<typeof allComments[0] & { edited: boolean }> =
+    [];
 
   for (const comment of allComments) {
     // only push unique originalIds (so you only see the newest edit)

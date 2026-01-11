@@ -25,12 +25,14 @@ export default defineEventHandler(async (event) => {
   }
 
   const tokenUser = typeof decoded !== "string" ? decoded.username : null;
-  const tokenRoles = typeof decoded !== "string" ? (
-    await db
-      .select({role: schema.userRoles.role})
-      .from(schema.userRoles)
-      .where(eq(schema.userRoles.user, tokenUser))
-  ).map(r => r.role) : [];
+  const tokenRoles = typeof decoded !== "string"
+    ? (
+      await db
+        .select({ role: schema.userRoles.role })
+        .from(schema.userRoles)
+        .where(eq(schema.userRoles.user, tokenUser))
+    ).map((r) => r.role)
+    : [];
 
   if (!tokenRoles.includes("admin")) {
     throw createError({
@@ -49,7 +51,7 @@ export default defineEventHandler(async (event) => {
   } catch {
     throw createError({
       statusCode: 400,
-      statusMessage: "Invalid body structure"
+      statusMessage: "Invalid body structure",
     });
   }
   if (!body) {
@@ -80,8 +82,8 @@ export default defineEventHandler(async (event) => {
         addedAt: new Date(),
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         description,
-      }
+      },
     });
-  
+
   return true;
 });
