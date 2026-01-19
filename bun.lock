@@ -9,7 +9,7 @@
         "@nuxt/fonts": "0.12.1",
         "@nuxt/icon": "2.2.0",
         "@nuxt/image": "2.0.0",
-        "better-sqlite3": "^12.6.0",
+        "better-sqlite3": "^12.6.2",
         "drizzle-orm": "^0.45.1",
         "jsonwebtoken": "^9.0.3",
         "markdown-it": "^14.1.0",
@@ -628,7 +628,7 @@
 
     "baseline-browser-mapping": ["baseline-browser-mapping@2.9.7", "", { "bin": { "baseline-browser-mapping": "dist/cli.js" } }, "sha512-k9xFKplee6KIio3IDbwj+uaCLpqzOwakOgmqzPezM0sFJlFKcg30vk2wOiAJtkTSfx0SSQDSe8q+mWA/fSH5Zg=="],
 
-    "better-sqlite3": ["better-sqlite3@12.6.0", "", { "dependencies": { "bindings": "^1.5.0", "prebuild-install": "^7.1.1" } }, "sha512-FXI191x+D6UPWSze5IzZjhz+i9MK9nsuHsmTX9bXVl52k06AfZ2xql0lrgIUuzsMsJ7Vgl5kIptvDgBLIV3ZSQ=="],
+    "better-sqlite3": ["better-sqlite3@12.6.2", "", { "dependencies": { "bindings": "^1.5.0", "prebuild-install": "^7.1.1" } }, "sha512-8VYKM3MjCa9WcaSAI3hzwhmyHVlH8tiGFwf0RlTsZPWJ1I5MkzjiudCo4KC4DxOaL/53A5B1sI/IbldNFDbsKA=="],
 
     "bindings": ["bindings@1.5.0", "", { "dependencies": { "file-uri-to-path": "1.0.0" } }, "sha512-p2q/t/mhvuOj/UeLlV6566GD/guowlr0hHxClI0W9m7MWYkL1F0hLo+0Aexs9HSPCtR1SXQ0TD3MMKrXZajbiQ=="],
 
