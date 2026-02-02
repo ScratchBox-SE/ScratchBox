@@ -10,7 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@iconify-json/ri": "^1.2.7",
+    "@iconify-json/ri": "^1.2.9",
     "@nuxt/fonts": "0.13.0",
     "@nuxt/icon": "2.2.1",
     "@nuxt/image": "2.0.0",
