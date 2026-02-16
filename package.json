@@ -17,7 +17,7 @@
     "better-sqlite3": "^12.6.2",
     "drizzle-orm": "^0.45.1",
     "jsonwebtoken": "^9.0.3",
-    "markdown-it": "^14.1.0",
+    "markdown-it": "^14.1.1",
     "markdown-it-emoji": "^3.0.0",
     "nuxt": "^4.3.1",
     "nuxt-file-storage": "^0.3.2",
