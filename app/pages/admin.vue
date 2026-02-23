@@ -10,8 +10,7 @@ if (user.loggedIn) {
     });
     userRoles = res ?? [];
   } catch {}
-}
-else {
+} else {
   throw createError({
     statusCode: 401,
     statusMessage: "Unauthorized",
@@ -32,10 +31,12 @@ interface RoleReturn {
   description: string | null;
 }
 
-const allRoles = ref<RoleReturn[]>(await $fetch<RoleReturn[]>("/api/user/roles", {
-  method: "GET",
-  headers: useRequestHeaders(["cookie"]),
-}));
+const allRoles = ref<RoleReturn[]>(
+  await $fetch<RoleReturn[]>("/api/user/roles", {
+    method: "GET",
+    headers: useRequestHeaders(["cookie"]),
+  }),
+);
 
 const roleProfiles = ref<string[]>([]);
 
@@ -46,15 +47,14 @@ watch(() => allRoles.value, async () => {
   }
 
   roleProfiles.value = await Promise.all(
-    allRoles.value.map((r) =>
-      getProfilePicture(r.user).catch(() => null) // handle errors per request
+    allRoles.value.map((r) => getProfilePicture(r.user).catch(() => null) // handle errors per request
     ),
   ) as string[];
 }, { immediate: true });
 
 const deleteForm = ref<number | null>(null);
 const deleteFormOpen = ref<boolean>(false);
-watch (deleteForm, async () => {
+watch(deleteForm, async () => {
   deleteFormOpen.value = deleteForm.value !== null;
 });
 
@@ -106,7 +106,10 @@ const submitRole = async (remove: boolean) => {
     formState.errorMessage = "Please select a role";
     return;
   }
-  if (formState.expiryDate && new Date(formState.expiryDate).getTime() < Date.now()) {
+  if (
+    formState.expiryDate &&
+    new Date(formState.expiryDate).getTime() < Date.now()
+  ) {
     formState.errorMessage = "Expiry date cannot be in the past";
     return;
   }
@@ -118,7 +121,11 @@ const submitRole = async (remove: boolean) => {
     res = await $fetch(`/api/user/${formState.targetUsername}/roles`, {
       method: remove ? "DELETE" : "POST",
       headers: useRequestHeaders(["cookie"]),
-      body: {role: formState.selectedRole, expiresAt: formState.expiryDate, description: formState.description},
+      body: {
+        role: formState.selectedRole,
+        expiresAt: formState.expiryDate,
+        description: formState.description,
+      },
     });
     if (res) {
       if (deleteFormOpen.value) {
@@ -129,17 +136,19 @@ const submitRole = async (remove: boolean) => {
         const newRole: RoleReturn = {
           role: formState.selectedRole,
           user: formState.targetUsername,
-          expiresAt: formState.expiryDate ? new Date(formState.expiryDate).toISOString() : null,
+          expiresAt: formState.expiryDate
+            ? new Date(formState.expiryDate).toISOString()
+            : null,
           description: formState.description || null,
         };
         allRoles.value.push(newRole);
 
-        const profilePic = await getProfilePicture(formState.targetUsername).catch(() => null);
+        const profilePic = await getProfilePicture(formState.targetUsername)
+          .catch(() => null);
         roleProfiles.value.push(profilePic as string);
       }
       resetForm();
-    }
-    else {
+    } else {
       formState.errorMessage = remove
         ? `${formState.targetUsername} does not have the '${formState.selectedRole}' role`
         : `Failed to assign role`;
@@ -157,12 +166,12 @@ if (import.meta.client) {
   const updateScreenSize = () => {
     isSmallScreen.value = window.innerWidth < 480;
   };
-  
+
   onMounted(() => {
     updateScreenSize();
     window.addEventListener("resize", updateScreenSize);
   });
-  
+
   onUnmounted(() => {
     window.removeEventListener("resize", updateScreenSize);
   });
@@ -175,24 +184,29 @@ const formatExpiryDate = computed(() => {
     const getDaySuffix = (d: number) => {
       if (d > 3 && d < 21) return "th";
       switch (d % 10) {
-        case 1: return "st";
-        case 2: return "nd";
-        case 3: return "rd";
-        default: return "th";
+        case 1:
+          return "st";
+        case 2:
+          return "nd";
+        case 3:
+          return "rd";
+        default:
+          return "th";
       }
     };
-    const month = isSmallScreen.value 
+    const month = isSmallScreen.value
       ? date.toLocaleDateString(undefined, { month: "short" })
       : date.toLocaleDateString(undefined, { month: "long" });
     const year = date.getFullYear();
     const hours = date.getHours() % 12 || 12;
     const minutes = date.getMinutes().toString().padStart(2, "0");
     const ampm = date.getHours() >= 12 ? "PM" : "AM";
-    
-    return `${day}${getDaySuffix(day)} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
+
+    return `${day}${
+      getDaySuffix(day)
+    } ${month} ${year}, ${hours}:${minutes} ${ampm}`;
   };
 });
-
 </script>
 <template>
   <section class="container">
@@ -201,7 +215,7 @@ const formatExpiryDate = computed(() => {
     <section>
       <h3>Active roles</h3>
       <button @click="createFormOpen = true" id="add-button">
-        <Icon name="ri:add-fill" style="color: white;" /> Add Role
+        <Icon name="ri:add-fill" style="color: white" /> Add Role
       </button>
       <div v-for="(role, i) in allRoles" class="role-card">
         <div class="user-details">
@@ -222,19 +236,32 @@ const formatExpiryDate = computed(() => {
           </span>
         </div>
 
-        <button v-if="!(role.user == user.username && role.role == 'admin')" @click="setSelectedRole(i)">
-          <Icon name="ri:delete-bin-line" size="20" style="color: white;" />
+        <button
+          v-if='!(role.user == user.username && role.role == "admin")'
+          @click="setSelectedRole(i)"
+        >
+          <Icon name="ri:delete-bin-line" size="20" style="color: white" />
         </button>
       </div>
     </section>
   </section>
 
-  <Dialog title="Remove Role" v-model:open="deleteFormOpen" v-on:update:open="resetForm">
+  <Dialog
+    title="Remove Role"
+    v-model:open="deleteFormOpen"
+    v-on:update:open="resetForm"
+  >
     <button @click="submitRole(true)">Confirm</button>
-    <p class="message error" v-if="formState.errorMessage">{{ formState.errorMessage }}</p>
+    <p class="message error" v-if="formState.errorMessage">
+      {{ formState.errorMessage }}
+    </p>
   </Dialog>
 
-  <Dialog title="Add Role" v-model:open="createFormOpen" v-on:update:open="resetForm">
+  <Dialog
+    title="Add Role"
+    v-model:open="createFormOpen"
+    v-on:update:open="resetForm"
+  >
     <label for="targetUsername">Username <span class="required">*</span></label>
     <input v-model="formState.targetUsername" id="targetUsername" />
     <label for="selectedRole">Role <span class="required">*</span></label>
@@ -248,182 +275,185 @@ const formatExpiryDate = computed(() => {
     <label for="description">Reason</label>
     <input type="text" v-model="formState.description" id="description" />
     <button @click="submitRole(false)">Create Role</button>
-    <p class="message error" v-if="formState.errorMessage">{{ formState.errorMessage }}</p>
+    <p class="message error" v-if="formState.errorMessage">
+      {{ formState.errorMessage }}
+    </p>
   </Dialog>
 </template>
 <style>
-  main {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  input, select, option {
-    padding: 0.25rem;
-    border-radius: 0.25rem;
-    font-size: 1rem;
-    color: var(--color-text);
-    background-color: var(--color-background);
-    border: 2px solid var(--color-background);
-  }
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+input, select, option {
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 1rem;
+  color: var(--color-text);
+  background-color: var(--color-background);
+  border: 2px solid var(--color-background);
+}
 
-  input:focus, select:focus {
-    outline: none;
-    border-color: var(--color-primary);
-  }
-  button {
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+button {
+  padding: 0.25rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 1rem;
+  background-color: var(--color-primary);
+  color: var(--color-primary-text);
+}
+
+.required {
+  color: var(--color-error) !important;
+}
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem;
+  width: 100%;
+  max-width: 65rem;
+}
+
+.role-card {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  border: 0.25rem solid var(--color-secondary-background);
+  border-radius: 0.5rem;
+  background-color: var(--color-card-background);
+  padding: 1rem;
+  position: relative;
+
+  & .role-text {
+    background-color: var(--color-secondary-background);
     padding: 0.25rem;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
     border-radius: 0.25rem;
-    font-size: 1rem;
-    background-color: var(--color-primary);
-    color: var(--color-primary-text);
+    white-space: nowrap;
   }
 
-  .required {
-    color: var(--color-error) !important;
+  & .role-profile {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+    white-space: nowrap;
+
+    & img {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 0.25rem;
+    }
   }
 
-  .flex-row {
+  & .user-details {
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+
+    & p {
+      height: fit-content;
+    }
   }
 
-  .container {
+  & button {
     display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    padding: 1rem;
-    width: 100%;
-    max-width: 65rem;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    cursor: pointer;
+    border: none;
+    background-color: var(--color-error);
+    flex-shrink: 0;
+    margin-left: 1rem;
+  }
+}
+
+.message {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+.message.error {
+  color: var(--color-error) !important;
+  text-align: center;
+  background-color: var(--color-error-background);
+}
+
+#add-button {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10rem;
+  border: none;
+  padding: 0.5rem;
+  margin-top: 0.75rem;
+  color: var(--color-primary-text);
+  cursor: pointer;
+}
+
+@media (max-width: 912px) {
+  .container {
+    padding: 0.5rem;
   }
 
   .role-card {
-    display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    margin-top: 1rem;
-    border: 0.25rem solid var(--color-secondary-background);
-    border-radius: 0.5rem;
-    background-color: var(--color-card-background);
-    padding: 1rem;
-    position: relative;
-
-    & .role-text {
-      background-color: var(--color-secondary-background);
-      padding: 0.25rem;
-      padding-left: 0.5rem;
-      padding-right: 0.5rem;
-      border-radius: 0.25rem;
-      white-space: nowrap;
-    }
-
-    & .role-profile {
-      display: flex;
-      flex-direction: row;
-      gap: 0.5rem;
-      align-items: center;
-      white-space: nowrap;
-
-      & img {
-        width: 3rem;
-        height: 3rem;
-        border-radius: 0.25rem;
-      }
-    }
 
     & .user-details {
-      display: flex;
       flex-direction: row;
       align-items: center;
       gap: 0.5rem;
+      flex-wrap: wrap;
       flex: 1;
       min-width: 0;
-      
-      & p {
-        height: fit-content;
+
+      & > .role-profile {
+        flex-shrink: 0;
+      }
+
+      & > .role-text {
+        flex-shrink: 0;
+      }
+
+      & > .flex-row {
+        flex-basis: 100%;
+        margin-top: 0.25rem;
+        width: 100%;
       }
     }
 
     & button {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border-radius: 50%;
-      width: 2.5rem;
-      height: 2.5rem;
-      cursor: pointer;
-      border: none;
-      background-color: var(--color-error);
-      flex-shrink: 0;
+      position: static;
       margin-left: 1rem;
     }
   }
-
-  .message {
-    margin-top: 1rem;
-    padding: 0.5rem;
-    border-radius: 0.25rem;
-  }
-  .message.error {
-    color: var(--color-error) !important;
-    text-align: center;
-    background-color: var(--color-error-background);
-  }
-
-  #add-button {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10rem;
-    border: none;
-    padding: 0.5rem;
-    margin-top: 0.75rem;
-    color: var(--color-primary-text);
-    cursor: pointer;
-  }
-
-  @media (max-width: 912px) {
-    .container {
-      padding: 0.5rem;
-    }
-
-    .role-card {
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: center;
-
-      & .user-details {
-        flex-direction: row;
-        align-items: center;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-        flex: 1;
-        min-width: 0;
-
-        & > .role-profile {
-          flex-shrink: 0;
-        }
-
-        & > .role-text {
-          flex-shrink: 0;
-        }
-
-        & > .flex-row {
-          flex-basis: 100%;
-          margin-top: 0.25rem;
-          width: 100%;
-        }
-      }
-
-      & button {
-        position: static;
-        margin-left: 1rem;
-      }
-    }
-  }
+}
 </style>
+

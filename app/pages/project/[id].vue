@@ -15,7 +15,7 @@ const platformsMap = {
 
 const projectId = useRoute().params.id;
 
-const { data: fetchedProject } = await useFetch<{
+const { data: fetchedProject, error: fetchError } = await useFetch<{
   id: string;
   name: string;
   description: string;
@@ -33,6 +33,11 @@ const { data: fetchedProject } = await useFetch<{
     edited: boolean;
   }[];
 }>(`/api/project/${projectId}`);
+
+if (fetchError.value) {
+  throw createError(fetchError.value);
+}
+
 const project = ref() as typeof fetchedProject;
 watch(fetchedProject, (val) => (project.value = val), { immediate: true });
 
@@ -218,10 +223,11 @@ const editingComment = ref<{ id: number; content: string }>({
   content: "",
 });
 
-const editComment = (comment: { id: number; content: string }) =>
-  (editingComment.value = { id: comment.id, content: comment.content });
-const stopEditingComment = () =>
-  (editingComment.value = { id: 0, content: "" });
+const editComment = (
+  comment: { id: number; content: string },
+) => (editingComment.value = { id: comment.id, content: comment.content });
+const stopEditingComment =
+  () => (editingComment.value = { id: 0, content: "" });
 const saveComment = async () => {
   // exit if no changes made to save wasting server resources
   const original = project.value!.comments.find(
@@ -311,9 +317,11 @@ const openEditor = async () => {
           {{ name }}
           <Icon
             v-if="editing"
-            :name="
-              platforms.includes(platform) ? 'ri:close-line' : 'ri:add-line'
-            "
+            :name='
+              platforms.includes(platform)
+                ? "ri:close-line"
+                : "ri:add-line"
+            '
             @click="addOrRemovePlatform(platform)"
           />
         </p>
@@ -341,14 +349,14 @@ const openEditor = async () => {
         </div>
       </div>
       <iframe
-        v-if="platforms.includes('wasm')"
+        v-if='platforms.includes("wasm")'
         :src="`https://scratcheverywhere.github.io/ScratchEverywhere/?project_url=${useRequestURL().host}/api/project/${projectId}/download`"
         allowtransparency="true"
         scrolling="no"
         allowfullscreen="true"
       />
       <iframe
-        v-else-if="platforms.includes('turbowarp')"
+        v-else-if='platforms.includes("turbowarp")'
         :src="`${editorURL}/embed.html?addons=gamepad,pause#${projectId}`"
         allowtransparency="true"
         scrolling="no"
@@ -371,7 +379,7 @@ const openEditor = async () => {
         </template>
         <div class="options">
           <button class="likes" @click="onLike">
-            <Icon :name="liked ? 'ri:thumb-up-fill' : 'ri:thumb-up-line'" />
+            <Icon :name='liked ? "ri:thumb-up-fill" : "ri:thumb-up-line"' />
             {{ project?.likes }}
           </button>
           <a

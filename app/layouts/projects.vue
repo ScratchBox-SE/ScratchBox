@@ -27,7 +27,7 @@ next.set("p", Number(route.query.p || "1") + 1);
   </div>
   <div class="page-controls">
     <NuxtLink
-      v-if="Number(route.query.p || '1') > 1"
+      v-if='Number(route.query.p || "1") > 1'
       :to="`${url.pathname}?${back.toString()}`"
     >
       Back

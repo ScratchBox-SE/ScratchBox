@@ -19,7 +19,7 @@ useHead({
 </script>
 <template>
   <NuxtLayout name="default">
-    <h1>{{ error?.statusCode }} - {{ error?.statusMessage }}</h1>
+    <h1>{{ error?.status }} - {{ error?.statusText }}</h1>
     <NuxtLink to="/">Go back home</NuxtLink>
   </NuxtLayout>
 </template>

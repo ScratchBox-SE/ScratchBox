@@ -11,7 +11,9 @@ const projects = await $fetch<{
 const profilePicture = await getProfilePicture(route.params.name as string);
 
 useHead({
-  title: `${projects.private ? "Your" : `${route.params.name}'s`} Profile - ScratchBox`,
+  title: `${
+    projects.private ? "Your" : `${route.params.name}'s`
+  } Profile - ScratchBox`,
   meta: [
     { name: "description", content: null },
     { property: "og:title", content: `${route.params.name}'s Profile` },

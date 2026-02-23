@@ -38,19 +38,20 @@ const handleClick = (e: MouseEvent) => {
     e.clientX > rect.right ||
     e.clientY < rect.top ||
     e.clientY > rect.bottom
-  )
+  ) {
     emit("update:open", false);
+  }
 };
 </script>
 <template>
   <dialog
     ref="dialogRef"
-    @cancel.prevent="emit('update:open', false)"
+    @cancel.prevent='emit("update:open", false)'
     @click="handleClick"
   >
     <header>
       <h3 v-if="props.title">{{ props.title }}</h3>
-      <Icon name="ri:close-circle-fill" @click="emit('update:open', false)" />
+      <Icon name="ri:close-circle-fill" @click='emit("update:open", false)' />
     </header>
     <div class="content">
       <slot />

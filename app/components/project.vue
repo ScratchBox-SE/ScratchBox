@@ -8,13 +8,13 @@ const props = defineProps<{ name: string; description: string; id: string }>();
     </object>
     <h2>{{ props.name }}</h2>
     <MarkdownText
-      v-if="props.description !== ''"
+      v-if='props.description !== ""'
       style="margin-bottom: -1rem"
-      :markdown="
+      :markdown='
         props.description.length > 90
-          ? props.description.slice(0, 90) + '...'
+          ? props.description.slice(0, 90) + "..."
           : props.description
-      "
+      '
     />
   </NuxtLink>
 </template>

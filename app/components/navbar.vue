@@ -81,28 +81,27 @@ onUnmounted(() => {
   <nav>
     <!-- FIXME: combine all of this mess somehow -->
     <div class="desktop">
-      <NuxtLink to="/"
-        ><img src="/scratchbox-logo-full.svg" alt="ScratchBox" />
+      <NuxtLink to="/"><img src="/scratchbox-logo-full.svg" alt="ScratchBox" />
       </NuxtLink>
       <ClientOnly>
         <a href="javascript:void(0);" @click="toggleTheme">
-          <Icon v-if="currentTheme === 'light'" name="ri:moon-fill" />
+          <Icon v-if='currentTheme === "light"' name="ri:moon-fill" />
           <Icon v-else name="ri:sun-line" />
         </a>
       </ClientOnly>
       <template v-if="user.loggedIn">
         <a href="javascript:void(0);" @click="createDialogOpen = true"
-          >Create</a
-        >
+        >Create</a>
       </template>
       <NuxtLink v-else :to="editorURL">Create</NuxtLink>
       <NuxtLink to="/explore">Explore</NuxtLink>
-      <NuxtLink v-if="userRoles.includes('admin')" to="/admin">Moderate</NuxtLink>
+      <NuxtLink v-if='userRoles.includes("admin")' to="/admin"
+      >Moderate</NuxtLink>
       <input
         type="search"
         placeholder="Search..."
         v-model="search"
-        @keyup.enter="navigateTo({ path: '/search', query: { q: search } })"
+        @keyup.enter='navigateTo({ path: "/search", query: { q: search } })'
       />
       <div
         ref="dropdownRef"
@@ -131,18 +130,19 @@ onUnmounted(() => {
         :to="`https://auth.itinerary.eu.org/auth/?redirect=${authRedirect}&name=ScratchBox`"
         target="_blank"
         v-else
-        >Log In</NuxtLink
-      >
+      >Log In</NuxtLink>
     </div>
     <div class="mobile" ref="mobileMenuRef">
       <div class="bar">
-        <NuxtLink to="/"
-          ><img src="/scratchbox-logo-full.svg" alt="ScratchBox" />
+        <NuxtLink to="/"><img
+            src="/scratchbox-logo-full.svg"
+            alt="ScratchBox"
+          />
         </NuxtLink>
         <div class="menu-buttons">
           <ClientOnly>
             <a href="javascript:void(0);" @click="toggleTheme">
-              <Icon v-if="currentTheme === 'light'" name="ri:moon-fill" />
+              <Icon v-if='currentTheme === "light"' name="ri:moon-fill" />
               <Icon v-else name="ri:sun-line" />
             </a>
           </ClientOnly>
@@ -158,16 +158,16 @@ onUnmounted(() => {
             type="search"
             placeholder="Search..."
             v-model="search"
-            @keyup.enter="navigateTo({ path: '/search', query: { q: search } })"
+            @keyup.enter='navigateTo({ path: "/search", query: { q: search } })'
           />
           <template v-if="user.loggedIn">
             <a href="javascript:void(0);" @click="createDialogOpen = true"
-              >Create</a
-            >
+            >Create</a>
           </template>
           <NuxtLink v-else :to="editorURL">Create</NuxtLink>
           <NuxtLink to="/explore">Explore</NuxtLink>
-          <NuxtLink v-if="userRoles.includes('admin')" to="/admin">Moderate</NuxtLink>
+          <NuxtLink v-if='userRoles.includes("admin")' to="/admin"
+          >Moderate</NuxtLink>
           <div class="dropdown" v-if="user.loggedIn">
             <a
               href="javascript:void(0);"
@@ -190,8 +190,7 @@ onUnmounted(() => {
             :to="`https://auth.itinerary.eu.org/auth/?redirect=${authRedirect}&name=ScratchBox`"
             target="_blank"
             v-else
-            >Log In</NuxtLink
-          >
+          >Log In</NuxtLink>
         </div>
       </Transition>
     </div>
