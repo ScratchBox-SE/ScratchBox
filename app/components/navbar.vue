@@ -1,6 +1,4 @@
 <script setup lang="ts">
-const nuxtApp = useNuxtApp();
-
 const authRedirect = btoa(`${useRequestURL().origin}/api/auth`);
 
 const user = await useCurrentUser();
@@ -52,19 +50,25 @@ if (user.loggedIn) {
 }
 
 const isDropdownOpen = ref(false);
-const dropdownRef = ref(null);
+const dropdownRef = useTemplateRef("dropdownRef");
 
 const isMenuOpen = ref(false);
-const mobileMenuRef = ref(null);
+const mobileMenuRef = useTemplateRef("mobileMenuRef");
 
 const isMobileDropdownOpen = ref(false);
 
-const closeIfClickedOutside = (event) => {
-  if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
+const closeIfClickedOutside = (event: Event) => {
+  if (
+    dropdownRef.value &&
+    !dropdownRef.value.contains(event.target as HTMLElement)
+  ) {
     isDropdownOpen.value = false;
   }
 
-  if (mobileMenuRef.value && !mobileMenuRef.value.contains(event.target)) {
+  if (
+    mobileMenuRef.value &&
+    !mobileMenuRef.value.contains(event.target as HTMLElement)
+  ) {
     isMenuOpen.value = false;
   }
 };
