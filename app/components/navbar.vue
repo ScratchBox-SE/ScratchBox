@@ -292,7 +292,7 @@ nav {
       color: var(--color-primary-text);
       border: none;
       outline: none;
-      margin: 0.5rem;
+      margin: 0.25rem 0.5rem;
       padding: 0.5rem;
       border-radius: 0.5rem;
       width: 100%;
