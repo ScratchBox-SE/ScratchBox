@@ -132,81 +132,124 @@ const contentId = ref("");
 if (description.value.length > 50) {
   description.value = description.value.slice(0, 50) + "...";
 }
+
+const building = ref(false);
+const logs = reactive<string[]>([]);
+const taskId = ref<string | null>(null);
+const startBuild = () => {
+  building.value = true;
+  const source = new EventSource(`/api/project/${projectId}/package`);
+
+  source.addEventListener("log", (event) => {
+    logs.push(event.data);
+  });
+
+  source.addEventListener("completed", (event) => {
+    const data = JSON.parse(event.data);
+    taskId.value = data.taskId;
+    building.value = false;
+    source.close();
+  });
+
+  source.addEventListener("error", (event) => {
+    // FIXME: Present errors to user
+    console.error(
+      "error happened while packaging (idk might be the event source as well)",
+      event,
+    );
+    building.value = false;
+    source.close();
+  });
+};
 </script>
 <template>
   <div class="package-wrapper">
     <h1>Packager</h1>
     <template v-if="project">
-      <p v-if="projectId">
-        Project: <NuxtLink :to="`/project/${projectId}`">{{
-          project.name
-        }}</NuxtLink>
-      </p>
-      <h2>Select a Platform</h2>
-      <div class="platforms">
-        <button
-          v-for='
-            platform in           platforms.filter((platform) =>
-              platform !== "scratch" && platform !== "turbowarp"
-            )
-          '
-          @click="selectedPlatform = platform"
-          :class="{ active: selectedPlatform === platform }"
-        >
-          {{ platformsMap[platform] }}
-        </button>
-      </div>
-      <template v-if="selectedPlatform !== null">
-        <h2>Application Info</h2>
-        <div
-          class="app-info"
-          v-if="platformSupportMap[selectedPlatform].name"
-        >
-          <label for="name">Name</label>
-          <input id="name" placeholder="Name" v-model="name" />
-        </div>
-        <div
-          class="app-info"
-          v-if="platformSupportMap[selectedPlatform].description"
-        >
-          <label for="description">Description</label>
-          <input
-            id="description"
-            placeholder="Description"
-            v-model="description"
-          />
-        </div>
-        <div
-          class="app-info"
-          v-if="platformSupportMap[selectedPlatform].author"
-        >
-          <label for="author">Author</label>
-          <input id="author" placeholder="Author" v-model="author" />
-        </div>
-        <div
-          class="app-info"
-          v-if="platformSupportMap[selectedPlatform].version"
-        >
-          <label for="version">Version</label>
-          <input id="version" placeholder="Version" v-model="version" />
-        </div>
-        <div
-          class="app-info"
-          v-if='selectedPlatform === "vita" || selectedPlatform === "ps4"'
-        >
-          <label for="titleid">Title ID</label>
-          <input id="titleid" placeholder="Title ID" v-model="titleId" />
-        </div>
-        <div
-          class="app-info"
-          v-if='selectedPlatform === "ps4"'
-        >
-          <label for="contentid">Content ID</label>
-          <input id="content" placeholder="Content ID" v-model="contentId" />
-        </div>
-        <p>Custom icon support coming soon!</p>
+      <template v-if="building">
+        <h2>Logs</h2>
+        <pre>{{ logs.join("\n") }}</pre>
       </template>
-      <button class="package">Package</button>
+      <template v-else-if="taskId != null">
+        <h2>Built!</h2>
+        <a :href="`/api/project/${projectId}/package?taskId=${taskId}`" download
+        >Download</a>
+      </template>
+      <template v-else>
+        <p v-if="projectId">
+          Project: <NuxtLink :to="`/project/${projectId}`">{{
+            project.name
+          }}</NuxtLink>
+        </p>
+        <h2>Select a Platform</h2>
+        <div class="platforms">
+          <button
+            v-for='
+              platform in             platforms.filter((platform) =>
+                platform !== "scratch" && platform !== "turbowarp"
+              )
+            '
+            @click="selectedPlatform = platform"
+            :class="{ active: selectedPlatform === platform }"
+          >
+            {{ platformsMap[platform] }}
+          </button>
+        </div>
+        <template v-if="selectedPlatform !== null">
+          <h2>Application Info</h2>
+          <div
+            class="app-info"
+            v-if="platformSupportMap[selectedPlatform].name"
+          >
+            <label for="name">Name</label>
+            <input id="name" placeholder="Name" v-model="name" />
+          </div>
+          <div
+            class="app-info"
+            v-if="platformSupportMap[selectedPlatform].description"
+          >
+            <label for="description">Description</label>
+            <input
+              id="description"
+              placeholder="Description"
+              v-model="description"
+            />
+          </div>
+          <div
+            class="app-info"
+            v-if="platformSupportMap[selectedPlatform].author"
+          >
+            <label for="author">Author</label>
+            <input id="author" placeholder="Author" v-model="author" />
+          </div>
+          <div
+            class="app-info"
+            v-if="platformSupportMap[selectedPlatform].version"
+          >
+            <label for="version">Version</label>
+            <input id="version" placeholder="Version" v-model="version" />
+          </div>
+          <div
+            class="app-info"
+            v-if='
+              selectedPlatform === "vita" ||
+                selectedPlatform === "ps4"
+            '
+          >
+            <label for="titleid">Title ID</label>
+            <input id="titleid" placeholder="Title ID" v-model="titleId" />
+          </div>
+          <div
+            class="app-info"
+            v-if='selectedPlatform === "ps4"'
+          >
+            <label for="contentid">Content ID</label>
+            <input id="content" placeholder="Content ID" v-model="contentId" />
+          </div>
+          <p>Custom icon support coming soon!</p>
+        </template>
+        <button class="package" @click="startBuild">Package</button>
+      </template>
     </template>
     <template v-else>
       <p>Non-ScratchBox projects aren't supported yet.</p>
@@ -288,5 +331,14 @@ if (description.value.length > 50) {
     padding: 0.75rem 1.25rem;
     border-radius: 1rem;
   }
+}
+
+pre {
+  background: var(--color-background) !important;
+  padding: 1rem !important;
+  width: 50rem;
+  min-height: 20rem;
+  margin: auto;
+  overflow: scroll;
 }
 </style>
