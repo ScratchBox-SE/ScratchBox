@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   const projectId = getRouterParam(event, "id") as string;
   const project = (await db.select().from(schema.projects).where(
     eq(schema.projects.id, projectId),
-  ))[0];
+  ))[0]!;
 
   if (project.user != (decoded as { username: string }).username) {
     throw createError({
@@ -43,19 +43,7 @@ export default defineEventHandler(async (event) => {
       thumbnail?: ServerFile;
       name: string;
       description: string;
-      platforms: (
-        | "scratch"
-        | "turbowarp"
-        | "3ds"
-        | "wiiu"
-        | "switch"
-        | "wii"
-        | "gamecube"
-        | "vita"
-        | "wasm"
-        | "ds"
-        | "ps4"
-      )[];
+      tags: ("dual-screen" | "heavy" | "light" | "balanced" | "cursor")[];
       private: boolean;
     }
   >(event);
@@ -80,61 +68,38 @@ export default defineEventHandler(async (event) => {
     eq(schema.projects.id, projectId),
   );
 
-  const allPlatforms = [
-    "scratch",
-    "turbowarp",
-    "3ds",
-    "wiiu",
-    "switch",
-    "wii",
-    "gamecube",
-    "vita",
-    "ps4",
-    "ds",
-    "wasm",
-  ] as (
-    | "scratch"
-    | "turbowarp"
-    | "3ds"
-    | "wiiu"
-    | "switch"
-    | "wii"
-    | "gamecube"
-    | "vita"
-    | "ps4"
-    | "ds"
-    | "wasm"
-  )[];
+  const allTags = [
+    "dual-screen",
+    "balanced",
+    "heavy",
+    "light",
+    "cursor",
+  ] as const;
 
-  const currentPlatforms = (await db.select({
-    platform: schema.projectPlatforms.platform,
+  const currentTags = (await db.select({
+    tag: schema.projectTags.tag,
   }).from(
-    schema.projectPlatforms,
+    schema.projectTags,
   ).where(
     and(
-      eq(schema.projectPlatforms.projectId, projectId),
+      eq(schema.projectTags.projectId, projectId),
     ),
-  )).map((item) => item.platform);
+  )).map((item) => item.tag);
 
-  for (const platform of allPlatforms) {
-    if (
-      (body.platforms.includes(platform) &&
-        currentPlatforms.includes(platform)) ||
-      (!body.platforms.includes(platform) &&
-        !currentPlatforms.includes(platform))
-    ) continue;
+  for (const tag of allTags) {
+    if (body.tags.includes(tag) === currentTags.includes(tag)) continue;
 
     if (
-      body.platforms.includes(platform) && !currentPlatforms.includes(platform)
+      body.tags.includes(tag) && !currentTags.includes(tag)
     ) {
-      await db.insert(schema.projectPlatforms).values({ projectId, platform });
+      await db.insert(schema.projectTags).values({ projectId, tag });
       continue;
     }
 
-    await db.delete(schema.projectPlatforms).where(
+    await db.delete(schema.projectTags).where(
       and(
-        eq(schema.projectPlatforms.projectId, projectId),
-        eq(schema.projectPlatforms.platform, platform),
+        eq(schema.projectTags.projectId, projectId),
+        eq(schema.projectTags.tag, tag),
       ),
     );
   }
@@ -150,22 +115,9 @@ export default defineEventHandler(async (event) => {
     await storeFileLocally(body.file, projectId, "/projects");
   }
 
-  if (
-    (await db.select().from(schema.projects).innerJoin(
-      schema.projectPlatforms,
-      eq(schema.projects.id, schema.projectPlatforms.projectId),
-    ).where(
-      and(
-        eq(schema.projects.id, project.id),
-        eq(schema.projectPlatforms.platform, "3ds"),
-        not(schema.projects.private),
-      ),
-    )).length > 0
-  ) {
-    await db.update(schema.unistoreData).set({
-      revision: (await db.select().from(schema.unistoreData))[0].revision + 1,
-    });
-  }
+  await db.update(schema.unistoreData).set({
+    revision: (await db.select().from(schema.unistoreData))[0]!.revision + 1,
+  });
 
   if (!body.thumbnail) return;
 

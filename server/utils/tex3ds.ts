@@ -1,24 +1,15 @@
 import { db } from "./drizzle";
 import * as schema from "../database/schema";
-import { and, eq, not } from "drizzle-orm";
 import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
 import sharp from "sharp";
 
 export const regenTex3DS = async () => {
-  const projects = await db.select().from(schema.projects).innerJoin(
-    schema.projectPlatforms,
-    eq(schema.projects.id, schema.projectPlatforms.projectId),
-  ).where(
-    and(
-      eq(schema.projectPlatforms.platform, "3ds"),
-      not(schema.projects.private),
-    ),
-  );
+  const projects = await db.select().from(schema.projects);
 
   const thumbnailPaths = await Promise.all(
-    projects.map(async ({ projects: project }) => {
+    projects.map(async (project) => {
       if (
         !fs.existsSync(getFileLocally(project.id + ".png", "/thumbnails"))
       ) return null;

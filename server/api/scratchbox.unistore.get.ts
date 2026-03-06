@@ -16,19 +16,11 @@ export default defineEventHandler(async (event) => {
       sheet: "scratchbox.t3x",
       sheetURL: `https://${getRequestHost(event)}/api/scratchbox.t3x`,
       version: 3,
-      revision: (await db.select().from(schema.unistoreData))[0].revision,
+      revision: (await db.select().from(schema.unistoreData))[0]?.revision,
       url: `https://${getRequestHost(event)}/api/scratchbox.unistore`,
     },
-    storeContent: (await db.select().from(schema.projects).innerJoin(
-      schema.projectPlatforms,
-      eq(schema.projects.id, schema.projectPlatforms.projectId),
-    ).where(
-      and(
-        eq(schema.projectPlatforms.platform, "3ds"),
-        not(schema.projects.private),
-      ),
-    )).map(
-      ({ projects: project }) => {
+    storeContent: (await db.select().from(schema.projects)).map(
+      (project) => {
         const hasThumbnail = fs.existsSync(
           getFileLocally(project.id + ".png", "/thumbnails"),
         );

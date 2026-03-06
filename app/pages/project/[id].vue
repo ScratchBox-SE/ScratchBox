@@ -1,17 +1,11 @@
 <script setup lang="ts">
-const platformsMap = {
-  scratch: "Scratch",
-  turbowarp: "TurboWarp",
-  "3ds": "3DS",
-  wiiu: "Wii U",
-  switch: "Switch",
-  wii: "Wii",
-  gamecube: "GameCube",
-  vita: "Vita",
-  ps4: "PS4",
-  ds: "DS",
-  wasm: "WASM (SE! Web)",
-};
+const tagsMap = {
+  "dual-screen": "Dual Screen",
+  "cursor": "Cursor",
+  "heavy": "Heavy",
+  "light": "Light",
+  "balanced": "Balanced",
+} as const;
 
 const projectId = useRoute().params.id;
 
@@ -23,7 +17,7 @@ const { data: fetchedProject, error: fetchError } = await useFetch<{
   private: boolean;
   user: string;
   likes: number;
-  platforms: (keyof typeof platformsMap)[];
+  tags: (keyof typeof tagsMap)[];
   comments: {
     id: number;
     originalId: number;
@@ -113,12 +107,12 @@ watch(
   { immediate: true },
 );
 
-const platforms = reactive(
-  project.value?.platforms.toSorted(
+const tags = reactive(
+  project.value?.tags.toSorted(
     (a, b) =>
-      Object.keys(platformsMap).indexOf(a) -
-      Object.keys(platformsMap).indexOf(b),
-  ) as (keyof typeof platformsMap)[],
+      Object.keys(tagsMap).indexOf(a) -
+      Object.keys(tagsMap).indexOf(b),
+  ) as (keyof typeof tagsMap)[],
 );
 
 const user = await useCurrentUser();
@@ -160,16 +154,16 @@ const resizeNameInput = () => {
   });
 };
 
-const addOrRemovePlatform = (platform: keyof typeof platformsMap) => {
-  if (platforms.includes(platform)) {
-    platforms.splice(platforms.indexOf(platform), 1);
+const addOrRemoveTag = (tag: keyof typeof tagsMap) => {
+  if (tags.includes(tag)) {
+    tags.splice(tags.indexOf(tag), 1);
     return;
   }
-  platforms.push(platform);
-  platforms.sort(
+  tags.push(tag);
+  tags.sort(
     (a, b) =>
-      Object.keys(platformsMap).indexOf(a) -
-      Object.keys(platformsMap).indexOf(b),
+      Object.keys(tagsMap).indexOf(a) -
+      Object.keys(tagsMap).indexOf(b),
   );
 };
 
@@ -190,7 +184,7 @@ const save = async () => {
       thumbnail: thumbnailFiles.value[0],
       name: name.value,
       description: description.value,
-      platforms: platforms,
+      tags: tags,
       private: isPrivate.value,
     },
   });
@@ -309,20 +303,16 @@ const openEditor = async () => {
         ref="nameInput"
         rows="1"
       />
-      <div class="platforms" v-if="platforms?.length > 0 || editing">
+      <div class="tags" v-if="tags.length > 0 || editing">
         <p
-          v-for="(name, platform) in platformsMap"
-          v-show="platforms.includes(platform) || editing"
+          v-for="(name, tag) in tagsMap"
+          v-show="tags.includes(tag) || editing"
         >
           {{ name }}
           <Icon
             v-if="editing"
-            :name='
-              platforms.includes(platform)
-                ? "ri:close-line"
-                : "ri:add-line"
-            '
-            @click="addOrRemovePlatform(platform)"
+            :name='tags.includes(tag) ? "ri:close-line" : "ri:add-line"'
+            @click="addOrRemoveTag(tag)"
           />
         </p>
       </div>
@@ -349,26 +339,11 @@ const openEditor = async () => {
         </div>
       </div>
       <iframe
-        v-if='platforms.includes("wasm")'
         :src="`https://scratcheverywhere.github.io/ScratchEverywhere/?project_url=${useRequestURL().host}/api/project/${projectId}/download`"
         allowtransparency="true"
         scrolling="no"
         allowfullscreen="true"
       />
-      <iframe
-        v-else-if='platforms.includes("turbowarp")'
-        :src="`${editorURL}/embed.html?addons=gamepad,pause#${projectId}`"
-        allowtransparency="true"
-        scrolling="no"
-        allowfullscreen="true"
-      />
-      <object
-        :data="`/api/project/${projectId}/thumbnail`"
-        type="image/png"
-        v-else
-      >
-        <img src="/default-thumbnail.png" />
-      </object>
     </div>
     <div class="right">
       <div class="inner">
@@ -618,7 +593,7 @@ body.project-page main {
       overflow: hidden;
     }
 
-    & .platforms {
+    & .tags {
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;

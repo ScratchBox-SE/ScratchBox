@@ -50,10 +50,10 @@ export default defineEventHandler(async (event) => {
     ...project,
     likes: (await db.select({ count: count() }).from(schema.projectLikes).where(
       eq(schema.projectLikes.projectId, projectId),
-    ))[0].count,
-    platforms: (await db.select().from(schema.projectPlatforms).where(
-      eq(schema.projectPlatforms.projectId, projectId),
-    )).map((projectPlatform) => projectPlatform.platform),
+    ))[0]?.count,
+    tags: (await db.select().from(schema.projectTags).where(
+      eq(schema.projectTags.projectId, projectId),
+    )).map((projectPlatform) => projectPlatform.tag),
     comments: processedComments,
   };
 });
