@@ -175,6 +175,14 @@ const startBuild = () => {
     source.close();
   });
 };
+
+const logsContainer = useTemplateRef("logsContainer");
+watch(logs, async () => {
+  await nextTick();
+  if (logsContainer.value) {
+    logsContainer.value.scrollTop = logsContainer.value.scrollHeight;
+  }
+}, { deep: true });
 </script>
 <template>
   <div class="package-wrapper">
@@ -191,7 +199,7 @@ const startBuild = () => {
           </a>
         </template>
         <h2>Logs</h2>
-        <pre>{{ logs.join("\n") }}</pre>
+        <pre ref="logsContainer">{{ logs.join("\n") }}</pre>
       </template>
       <template v-else>
         <p v-if="projectId">
@@ -352,6 +360,7 @@ pre {
   padding: 1rem !important;
   width: 50rem;
   min-height: 20rem;
+  max-height: 35vw;
   margin: auto;
   overflow: scroll;
 }
