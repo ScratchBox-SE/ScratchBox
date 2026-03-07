@@ -231,7 +231,15 @@ watch(logs, async () => {
             {{ platformName }}
           </button>
         </div>
-        <template v-if="selectedPlatform !== null">
+        <template
+          v-if="
+            selectedPlatform !== null &&
+              (platformSupportMap[selectedPlatform].description ||
+                platformSupportMap[selectedPlatform].author ||
+                platformSupportMap[selectedPlatform].name ||
+                platformSupportMap[selectedPlatform].version)
+          "
+        >
           <h2>Application Info</h2>
           <div
             class="app-info"
@@ -284,7 +292,13 @@ watch(logs, async () => {
           </div>
           <p>Custom icon support coming soon!</p>
         </template>
-        <button class="package" @click="startBuild">Package</button>
+        <button
+          class="package"
+          @click="startBuild"
+          v-if="selectedPlatform != null"
+        >
+          Package
+        </button>
       </template>
     </template>
     <template v-else>
