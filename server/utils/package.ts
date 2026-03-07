@@ -51,7 +51,6 @@ export const runBuild = (
     });
 
     child.on("close", (code) => {
-      console.log("hi!");
       if (code == 0) resolve(`${outputDir}/scratch-nx.nro`);
       else reject(new Error(`Build failed with code ${code}`));
     });

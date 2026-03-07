@@ -1,32 +1,22 @@
 <script setup lang="ts">
 const platformsMap = {
-  scratch: "Scratch",
-  turbowarp: "TurboWarp",
-  wasm: "WASM (SE! Web)",
+  "wasm": "WASM (SE! Web)",
   "3ds": "3DS",
-  wiiu: "Wii U",
-  switch: "Switch",
-  wii: "Wii",
-  gamecube: "GameCube",
-  vita: "Vita",
-  ps4: "PS4",
-  ds: "DS",
+  "wiiu": "Wii U",
+  "switch": "Switch",
+  "wii": "Wii",
+  "gamecube": "GameCube",
+  "vita": "Vita",
+  "ps4": "PS4",
+  "ds": "DS",
+  "macos": "macOS",
+  "linux": "Linux",
+  "windows": "Windows",
+  "psp": "PSP",
+  "webos": "webOS",
 } as const;
 
 const platformSupportMap = {
-  // Scratch and TurboWarp are here for type safety
-  "scratch": {
-    name: false,
-    author: false,
-    description: false,
-    version: false,
-  },
-  "turbowarp": {
-    name: false,
-    author: false,
-    description: false,
-    version: false,
-  },
   "wasm": {
     name: false,
     author: false,
@@ -81,6 +71,36 @@ const platformSupportMap = {
     description: true,
     version: false,
   },
+  "macos": {
+    name: false,
+    author: false,
+    description: false,
+    version: false,
+  },
+  "linux": {
+    name: false,
+    author: false,
+    description: false,
+    version: false,
+  },
+  "windows": {
+    name: false,
+    author: false,
+    description: false,
+    version: false,
+  },
+  "psp": {
+    name: true,
+    author: false,
+    description: false,
+    version: true,
+  },
+  "webos": {
+    name: true,
+    author: false,
+    description: true,
+    version: true,
+  },
 } as const;
 
 const projectId = useRoute().params.id;
@@ -94,7 +114,7 @@ const { data: fetchedProject, error: fetchError } = await useFetch<{
   private: boolean;
   user: string;
   likes: number;
-  platforms: (keyof typeof platformsMap)[];
+  tags: ("heavy" | "dual-screen" | "light" | "balanced")[];
   comments: {
     id: number;
     originalId: number;
@@ -111,14 +131,6 @@ if (fetchError.value && projectId) {
 
 const project = ref() as typeof fetchedProject;
 watch(fetchedProject, (val) => (project.value = val), { immediate: true });
-
-const platforms = reactive(
-  project.value?.platforms.toSorted(
-    (a, b) =>
-      Object.keys(platformsMap).indexOf(a) -
-      Object.keys(platformsMap).indexOf(b),
-  ) as (keyof typeof platformsMap)[],
-);
 
 const selectedPlatform = ref<keyof typeof platformsMap | null>(null);
 
@@ -184,15 +196,11 @@ const startBuild = () => {
         <h2>Select a Platform</h2>
         <div class="platforms">
           <button
-            v-for='
-              platform in             platforms.filter((platform) =>
-                platform !== "scratch" && platform !== "turbowarp"
-              )
-            '
+            v-for="(platformName, platform) in platformsMap"
             @click="selectedPlatform = platform"
             :class="{ active: selectedPlatform === platform }"
           >
-            {{ platformsMap[platform] }}
+            {{ platformName }}
           </button>
         </div>
         <template v-if="selectedPlatform !== null">
