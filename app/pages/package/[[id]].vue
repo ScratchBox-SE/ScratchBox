@@ -360,6 +360,7 @@ watch(logs, async () => {
 }
 
 pre {
+  text-align: left;
   background: var(--color-background) !important;
   padding: 1rem !important;
   width: 50rem;
