@@ -5,7 +5,7 @@ import fs from "node:fs";
 interface PackagerPlatform {
   type: "make" | "cmake"; // TODO: Actually support Makefiles
   image: string;
-  buildArgs: string;
+  buildArgs?: string;
   output: string;
   prebuild?: string;
   postbuild?: string;
@@ -43,6 +43,14 @@ const platformsMap: { [key: string]: PackagerPlatform } = {
     postbuild:
       "cmake --install build --prefix build/package && ares-package build/package -o build",
   },
+  "linux": {
+    type: "cmake",
+    image: "gcc:14",
+    buildArgs: "-DSE_RENDERER=sdl2",
+    output: "scratch-everywhere",
+    prebuild:
+      "apt-get update && apt-get install -y --no-install-recommends build-essential cmake libmbedtls-dev",
+  },
 };
 
 interface PackagerAppInfo {
@@ -77,7 +85,10 @@ export const runBuild = (
     if (platformInfo.prebuild != null) {
       buildCommand += ` ${platformInfo.prebuild} &&`;
     }
-    buildCommand += `cmake ${platformInfo.buildArgs} `;
+    buildCommand += `cmake `;
+    if (platformInfo.buildArgs != null) {
+      buildCommand += `${platformInfo.buildArgs} `;
+    }
     if (appInfo.author != null && appInfo.author != "") {
       buildCommand += `-DSE_APP_AUTHOR="${appInfo.author}" `;
     }
