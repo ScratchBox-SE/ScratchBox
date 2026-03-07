@@ -25,6 +25,12 @@ const platformsMap: { [key: string]: PackagerPlatform } = {
     prebuild:
       'wget -O $VITASDK/share/vita.cmake "https://raw.githubusercontent.com/gradylink/vita-toolchain/refs/heads/fix/cmake/cmake_toolchain/vita.cmake"',
   },
+  "psp": {
+    type: "cmake",
+    image: "pspdev/pspdev:latest",
+    buildArgs: "-DCMAKE_TOOLCHAIN_FILE=$PSPDEV/psp/share/pspdev.cmake",
+    output: "scratch-psp.zip",
+  },
 };
 
 export const runBuild = (
