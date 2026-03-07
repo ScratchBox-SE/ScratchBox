@@ -71,13 +71,19 @@ export const runBuild = (
     child.stderr.setEncoding("utf8");
 
     child.stdout.on("data", (data: string) => {
-      console.log(`[Build: ${projectId}]: ${data}`);
-      if (onLog) onLog(data);
+      const lines = data.trimEnd().split("\n");
+      for (const line of lines) {
+        console.log(`[Build: ${projectId}]: ${line}`);
+        if (onLog) onLog(line);
+      }
     });
 
     child.stderr.on("data", (data: string) => {
-      console.log(`[Build Error: ${projectId}]: ${data}`);
-      if (onLog) onLog(data);
+      const lines = data.trimEnd().split("\n");
+      for (const line of lines) {
+        console.log(`[Build Error: ${projectId}]: ${line}`);
+        if (onLog) onLog(line);
+      }
     });
 
     child.on("close", (code) => {
