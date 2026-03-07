@@ -180,14 +180,18 @@ const startBuild = () => {
   <div class="package-wrapper">
     <h1>Packager</h1>
     <template v-if="project">
-      <template v-if="building">
+      <template v-if="building || taskId != null">
         <h2>Logs</h2>
         <pre>{{ logs.join("\n") }}</pre>
-      </template>
-      <template v-else-if="taskId != null">
-        <h2>Built!</h2>
-        <a :href="`/api/project/${projectId}/package?taskId=${taskId}`" download
-        >Download</a>
+        <template v-if="taskId != null">
+          <h2>Built!</h2>
+          <a
+            :href="`/api/project/${projectId}/package?taskId=${taskId}`"
+            download
+          >
+            Download
+          </a>
+        </template>
       </template>
       <template v-else>
         <p v-if="projectId">
