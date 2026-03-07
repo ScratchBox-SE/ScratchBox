@@ -75,6 +75,16 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    if (
+      query.platform == null || typeof query.platform != "string" ||
+      query.platform == ""
+    ) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Missing or invalid platform param.",
+      });
+    }
+
     const [task] = await db.insert(schema.packageTasks).values({
       projectId,
       status: "pending",
@@ -83,7 +93,7 @@ export default defineEventHandler(async (event) => {
 
     const eventStream = createEventStream(event);
 
-    runBuild(projectId, filePath, taskId, (log) => {
+    runBuild(projectId, filePath, taskId, query.platform, (log) => {
       eventStream.push({ event: "log", data: log });
     }).then(async (outputPath) => {
       await db.update(schema.packageTasks).set({

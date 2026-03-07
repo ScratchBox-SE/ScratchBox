@@ -150,7 +150,9 @@ const logs = reactive<string[]>([]);
 const taskId = ref<string | null>(null);
 const startBuild = () => {
   building.value = true;
-  const source = new EventSource(`/api/project/${projectId}/package`);
+  const source = new EventSource(
+    `/api/project/${projectId}/package?platform=${selectedPlatform.value}`,
+  );
 
   source.addEventListener("log", (event) => {
     logs.push(event.data);
