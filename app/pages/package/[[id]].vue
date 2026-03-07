@@ -181,8 +181,6 @@ const startBuild = () => {
     <h1>Packager</h1>
     <template v-if="project">
       <template v-if="building || taskId != null">
-        <h2>Logs</h2>
-        <pre>{{ logs.join("\n") }}</pre>
         <template v-if="taskId != null">
           <h2>Built!</h2>
           <a
@@ -192,6 +190,8 @@ const startBuild = () => {
             Download
           </a>
         </template>
+        <h2>Logs</h2>
+        <pre>{{ logs.join("\n") }}</pre>
       </template>
       <template v-else>
         <p v-if="projectId">
