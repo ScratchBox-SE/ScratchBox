@@ -45,7 +45,7 @@ const sortedComments = computed(() => {
     )
     .map((comment) => ({
       ...comment,
-      timeSince: useFormatedTime(new Date(comment.createdAt)),
+      timeSince: useFormatedTime(new Date(comment.createdAt)) + " ago",
     }));
 });
 const commentProfiles = ref<string[]>([]);

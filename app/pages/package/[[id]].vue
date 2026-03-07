@@ -148,7 +148,9 @@ if (description.value.length > 50) {
 const building = ref(false);
 const logs = reactive<string[]>([]);
 const taskId = ref<string | null>(null);
+const buildTime = ref<string | null>(null);
 const startBuild = () => {
+  const buildStart = new Date();
   building.value = true;
   const source = new EventSource(
     `/api/project/${projectId}/package?platform=${selectedPlatform.value}`,
@@ -159,6 +161,7 @@ const startBuild = () => {
   });
 
   source.addEventListener("completed", (event) => {
+    buildTime.value = useFormatedTime(buildStart);
     const data = JSON.parse(event.data);
     taskId.value = data.taskId;
     building.value = false;
@@ -191,6 +194,7 @@ watch(logs, async () => {
       <template v-if="building || taskId != null">
         <template v-if="taskId != null">
           <h2>Built!</h2>
+          <p>Took {{ buildTime }}.</p>
           <a
             :href="`/api/project/${projectId}/package?taskId=${taskId}`"
             download
