@@ -8,6 +8,7 @@ interface PackagerPlatform {
   buildArgs: string;
   output: string;
   prebuild?: string;
+  postbuild?: string;
 }
 
 const platformsMap: { [key: string]: PackagerPlatform } = {
@@ -30,6 +31,17 @@ const platformsMap: { [key: string]: PackagerPlatform } = {
     image: "pspdev/pspdev:latest",
     buildArgs: "-DCMAKE_TOOLCHAIN_FILE=$PSPDEV/psp/share/pspdev.cmake",
     output: "scratch-psp.zip",
+  },
+  "webos": {
+    type: "cmake",
+    image: "node:20-slim",
+    buildArgs:
+      "-DCMAKE_TOOLCHAIN_FILE=arm-webos-linux-gnueabi_sdk-buildroot/share/buildroot/toolchainfile.cmake -DSE_CLOUDVARS=ON -DWEBOS=ON -DSE_RENDERER=sdl2",
+    output: "io.github.scratcheverywhere_0.0.1_arm.ipk",
+    prebuild:
+      'apt-get update && apt-get install -y pkg-config cmake wget git file ca-certificates && npm install -g @webos-tools/cli && wget -qO- "https://github.com/openlgtv/buildroot-nc4/releases/latest/download/arm-webos-linux-gnueabi_sdk-buildroot-x86_64.tar.gz" | tar -xzf - && chmod +x arm-webos-linux-gnueabi_sdk-buildroot/relocate-sdk.sh && arm-webos-linux-gnueabi_sdk-buildroot/relocate-sdk.sh',
+    postbuild:
+      "cmake --install build --prefix build/package && ares-package build/package -o build",
   },
 };
 
@@ -69,7 +81,9 @@ export const runBuild = (
       "-c",
       `cd /app &&${
         platformInfo.prebuild == null ? "" : ` ${platformInfo.prebuild} &&`
-      } cmake ${platformInfo.buildArgs} -DSE_OBJECTS_DIR=/prebuilt -DCMAKE_BUILD_TYPE=Release -B build && cmake --build build && cp build/${platformInfo.output} /out/`,
+      } cmake ${platformInfo.buildArgs} -DSE_OBJECTS_DIR=/prebuilt -DCMAKE_BUILD_TYPE=Release -B build && cmake --build build${
+        platformInfo.postbuild == null ? "" : ` && ${platformInfo.postbuild}`
+      } && cp build/${platformInfo.output} /out/`,
     ];
 
     const child = spawn("docker", args);
