@@ -45,11 +45,21 @@ const platformsMap: { [key: string]: PackagerPlatform } = {
   },
 };
 
+interface PackagerAppInfo {
+  name?: string;
+  version?: string;
+  author?: string;
+  description?: string;
+  titleId?: string;
+  contentId?: string;
+}
+
 export const runBuild = (
   projectId: string,
   projectPath: string,
   taskId: number,
   platform: string,
+  appInfo: PackagerAppInfo,
   onLog?: (data: string) => void,
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -62,6 +72,33 @@ export const runBuild = (
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
+
+    let buildCommand = "cd /app &&";
+    if (platformInfo.prebuild != null) {
+      buildCommand += ` ${platformInfo.prebuild} &&`;
+    }
+    buildCommand += `cmake ${platformInfo.buildArgs} `;
+    if (appInfo.author != null && appInfo.author != "") {
+      buildCommand += `-DSE_APP_AUTHOR="${appInfo.author}" `;
+    }
+    if (appInfo.description != null && appInfo.description != "") {
+      buildCommand += `-DSE_APP_DESCRIPTION="${appInfo.description}" `;
+    }
+    if (appInfo.name != null && appInfo.name != "") {
+      buildCommand += `-DSE_APP_NAME="${appInfo.name}" `;
+    }
+    if (appInfo.version != null && appInfo.version != "") {
+      buildCommand += `-DSE_APP_VERSION="${appInfo.version}" `;
+    }
+    if (appInfo.titleId != null && appInfo.titleId != "") {
+      buildCommand += `-DSE_APP_TITLEID="${appInfo.titleId}" `;
+    }
+    buildCommand +=
+      "-DSE_OBJECTS_DIR=/prebuilt -DCMAKE_BUILD_TYPE=Release -B build && cmake --build build &&";
+    if (platformInfo.postbuild != null) {
+      buildCommand += ` ${platformInfo.postbuild} &&`;
+    }
+    buildCommand += ` cp build/${platformInfo.output} /out/`;
 
     const args = [
       "run",
@@ -79,11 +116,7 @@ export const runBuild = (
       platformInfo.image,
       "/bin/bash",
       "-c",
-      `cd /app &&${
-        platformInfo.prebuild == null ? "" : ` ${platformInfo.prebuild} &&`
-      } cmake ${platformInfo.buildArgs} -DSE_OBJECTS_DIR=/prebuilt -DCMAKE_BUILD_TYPE=Release -B build && cmake --build build${
-        platformInfo.postbuild == null ? "" : ` && ${platformInfo.postbuild}`
-      } && cp build/${platformInfo.output} /out/`,
+      buildCommand,
     ];
 
     const child = spawn("docker", args);

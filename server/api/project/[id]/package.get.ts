@@ -93,7 +93,14 @@ export default defineEventHandler(async (event) => {
 
     const eventStream = createEventStream(event);
 
-    runBuild(projectId, filePath, taskId, query.platform, (log) => {
+    runBuild(projectId, filePath, taskId, query.platform, {
+      name: query.name as string | undefined,
+      author: query.author as string | undefined,
+      description: query.description as string | undefined,
+      version: query.version as string | undefined,
+      titleId: query.titleId as string | undefined,
+      contentId: query.contentId as string | undefined,
+    }, (log) => {
       eventStream.push({ event: "log", data: log });
     }).then(async (outputPath) => {
       await db.update(schema.packageTasks).set({

@@ -99,7 +99,7 @@ const platformSupportMap = {
     name: true,
     author: false,
     description: true,
-    version: true,
+    version: false, // at least for now no version
   },
 } as const;
 
@@ -152,8 +152,18 @@ const buildTime = ref<string | null>(null);
 const startBuild = () => {
   const buildStart = new Date();
   building.value = true;
+
+  const params = new URLSearchParams({
+    platform: selectedPlatform.value!,
+    name: name.value,
+    author: author.value,
+    description: description.value,
+    version: version.value,
+    titleId: titleId.value,
+    contentId: contentId.value,
+  });
   const source = new EventSource(
-    `/api/project/${projectId}/package?platform=${selectedPlatform.value}`,
+    `/api/project/${projectId}/package?${params.toString()}`,
   );
 
   source.addEventListener("log", (event) => {
