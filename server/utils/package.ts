@@ -8,6 +8,8 @@ interface PackagerPlatform {
   output: string;
   prebuild?: string;
   postbuild?: string;
+  cmakePrefix?: string;
+  buildCommand?: string; // default: cmake --build build
 }
 
 const platformsMap: { [key: string]: PackagerPlatform } = {
@@ -63,6 +65,14 @@ const platformsMap: { [key: string]: PackagerPlatform } = {
     buildArgs: "-DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Wii.cmake",
     output: "scratch-wii.zip",
   },
+  "wasm": {
+    image: "emscripten/emsdk:latest",
+    cmakePrefix: "emcmake",
+    buildCommand: "cd build && emmake make && cd ..",
+    buildArgs: "-DSE_OUTPUT_NAME=index",
+    postbuild: "zip -j build/scratch-wasm.zip build/index.*",
+    output: "scratch-wasm.zip",
+  },
 };
 
 interface PackagerAppInfo {
@@ -97,7 +107,10 @@ export const runBuild = (
     if (platformInfo.prebuild != null) {
       buildCommand += ` ${platformInfo.prebuild} &&`;
     }
-    buildCommand += `cmake `;
+    if (platformInfo.cmakePrefix != null) {
+      buildCommand += `${platformInfo.cmakePrefix} `;
+    }
+    buildCommand += "cmake ";
     if (platformInfo.buildArgs != null) {
       buildCommand += `${platformInfo.buildArgs} `;
     }
@@ -117,7 +130,9 @@ export const runBuild = (
       buildCommand += `-DSE_APP_TITLEID="${appInfo.titleId}" `;
     }
     buildCommand +=
-      "-DSE_OBJECTS_DIR=/prebuilt -DCMAKE_BUILD_TYPE=Release -B build && cmake --build build &&";
+      `-DSE_OBJECTS_DIR=/prebuilt -DCMAKE_BUILD_TYPE=Release -B build && ${
+        platformInfo.buildCommand ?? "cmake --build build"
+      } &&`;
     if (platformInfo.postbuild != null) {
       buildCommand += ` ${platformInfo.postbuild} &&`;
     }
