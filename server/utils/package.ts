@@ -78,6 +78,12 @@ const platformsMap: { [key: string]: PackagerPlatform } = {
     buildArgs: "-DCMAKE_TOOLCHAIN_FILE=ps4-toolchain.cmake",
     output: "scratch-ps4.pkg",
   },
+  "wiiu": {
+    image: "devkitpro/devkitppc:latest",
+    buildArgs: "-DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/WiiU.cmake",
+    postbuild: "cmake --build build --target package",
+    output: "scratch-wiiu.zip",
+  },
 };
 
 interface PackagerAppInfo {
