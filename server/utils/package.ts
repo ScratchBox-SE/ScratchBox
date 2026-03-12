@@ -58,6 +58,11 @@ const platformsMap: { [key: string]: PackagerPlatform } = {
       "-DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/GameCube.cmake -DDKP_OGC_PLATFORM_LIBRARY=libogc2",
     output: "scratch-gamecube.dol",
   },
+  "wii": {
+    image: "devkitpro/devkitppc:latest",
+    buildArgs: "-DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Wii.cmake",
+    output: "scratch-wii.zip",
+  },
 };
 
 interface PackagerAppInfo {
