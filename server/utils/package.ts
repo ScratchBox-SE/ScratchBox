@@ -3,7 +3,6 @@ import path from "node:path";
 import fs from "node:fs";
 
 interface PackagerPlatform {
-  type: "make" | "cmake"; // TODO: Actually support Makefiles
   image: string;
   buildArgs?: string;
   output: string;
@@ -13,13 +12,11 @@ interface PackagerPlatform {
 
 const platformsMap: { [key: string]: PackagerPlatform } = {
   "switch": {
-    type: "cmake",
     image: "devkitpro/devkita64:latest",
     buildArgs: "-DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake",
     output: "scratch-nx.nro",
   },
   "vita": {
-    type: "cmake",
     image: "vitasdk/vitasdk:latest",
     buildArgs: "-DCMAKE_TOOLCHAIN_FILE=$VITASDK/share/vita.toolchain.cmake",
     output: "scratch-vita.vpk",
@@ -27,13 +24,11 @@ const platformsMap: { [key: string]: PackagerPlatform } = {
       'wget -O $VITASDK/share/vita.cmake "https://raw.githubusercontent.com/gradylink/vita-toolchain/refs/heads/fix/cmake/cmake_toolchain/vita.cmake"',
   },
   "psp": {
-    type: "cmake",
     image: "pspdev/pspdev:latest",
     buildArgs: "-DCMAKE_TOOLCHAIN_FILE=$PSPDEV/psp/share/pspdev.cmake",
     output: "scratch-psp.zip",
   },
   "webos": {
-    type: "cmake",
     image: "node:20-slim",
     buildArgs:
       "-DCMAKE_TOOLCHAIN_FILE=arm-webos-linux-gnueabi_sdk-buildroot/share/buildroot/toolchainfile.cmake -DSE_CLOUDVARS=ON -DWEBOS=ON -DSE_RENDERER=sdl2",
@@ -44,12 +39,18 @@ const platformsMap: { [key: string]: PackagerPlatform } = {
       "cmake --install build --prefix build/package && ares-package build/package -o build",
   },
   "linux": {
-    type: "cmake",
     image: "gcc:14",
     buildArgs: "-DSE_RENDERER=sdl2",
     output: "scratch-everywhere",
     prebuild:
       "apt-get update && apt-get install -y --no-install-recommends build-essential cmake libmbedtls-dev",
+  },
+  "ds": {
+    image: "skylyrac/blocksds:slim-latest",
+    buildArgs: "-DCMAKE_TOOLCHAIN_FILE=$BLOCKSDS/cmake/BlocksDS.cmake",
+    output: "scratch-ds.nds",
+    prebuild:
+      "apt-get update && apt-get install -y --no-install-recommends cmake pkg-config",
   },
 };
 
