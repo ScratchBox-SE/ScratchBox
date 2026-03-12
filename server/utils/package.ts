@@ -73,6 +73,11 @@ const platformsMap: { [key: string]: PackagerPlatform } = {
     postbuild: "zip -j build/scratch-wasm.zip build/index.*",
     output: "scratch-wasm.zip",
   },
+  "ps4": {
+    image: "gradylink/pacbrew:latest",
+    buildArgs: "-DCMAKE_TOOLCHAIN_FILE=ps4-toolchain.cmake",
+    output: "scratch-ps4.pkg",
+  },
 };
 
 interface PackagerAppInfo {
