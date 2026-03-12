@@ -283,13 +283,6 @@ watch(logs, async () => {
             <label for="titleid">Title ID</label>
             <input id="titleid" placeholder="Title ID" v-model="titleId" />
           </div>
-          <div
-            class="app-info"
-            v-if='selectedPlatform === "ps4"'
-          >
-            <label for="contentid">Content ID</label>
-            <input id="content" placeholder="Content ID" v-model="contentId" />
-          </div>
           <p>Custom icon support coming soon!</p>
         </template>
         <button
