@@ -52,6 +52,12 @@ const platformsMap: { [key: string]: PackagerPlatform } = {
     prebuild:
       "apt-get update && apt-get install -y --no-install-recommends cmake pkg-config",
   },
+  "gamecube": {
+    image: "ghcr.io/extremscorner/libogc2:latest",
+    buildArgs:
+      "-DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/GameCube.cmake -DDKP_OGC_PLATFORM_LIBRARY=libogc2",
+    output: "scratch-gamecube.dol",
+  },
 };
 
 interface PackagerAppInfo {
