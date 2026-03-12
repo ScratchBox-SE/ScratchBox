@@ -150,6 +150,10 @@ const logs = reactive<string[]>([]);
 const taskId = ref<string | null>(null);
 const buildTime = ref<string | null>(null);
 const startBuild = () => {
+  if (
+    selectedPlatform.value == "vita" && !/^[A-Z]{4}\d{5}$/.test(titleId.value)
+  ) return;
+
   const buildStart = new Date();
   building.value = true;
 
@@ -281,7 +285,13 @@ watch(logs, async () => {
             '
           >
             <label for="titleid">Title ID</label>
-            <input id="titleid" placeholder="Title ID" v-model="titleId" />
+            <input
+              id="titleid"
+              placeholder="Title ID"
+              v-model="titleId"
+              pattern="^[A-Z]{4}\d{5}$"
+              required
+            />
           </div>
           <p>Custom icon support coming soon!</p>
         </template>
@@ -353,16 +363,21 @@ watch(logs, async () => {
 
     & input {
       background-color: var(--color-background);
+      border: 2px solid var(--color-background);
       color: var(--color-text);
       border-radius: 1rem;
-      border: none;
       padding: 1rem;
       outline: none;
-      transition: 100ms background ease-in-out;
+      transition: 100ms all ease-in-out;
       font-size: 1rem;
 
       &:active, &:focus {
         background-color: var(--color-card-background);
+        border-color: var(--color-card-background);
+      }
+
+      &:invalid {
+        border-color: var(--color-error);
       }
     }
   }
