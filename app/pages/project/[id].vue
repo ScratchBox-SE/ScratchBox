@@ -45,7 +45,7 @@ const sortedComments = computed(() => {
     )
     .map((comment) => ({
       ...comment,
-      timeSince: useFormatedTime(new Date(comment.createdAt)),
+      timeSince: useFormatedTime(new Date(comment.createdAt)) + " ago",
     }));
 });
 const commentProfiles = ref<string[]>([]);
@@ -357,16 +357,24 @@ const openEditor = async () => {
             <Icon :name='liked ? "ri:thumb-up-fill" : "ri:thumb-up-line"' />
             {{ project?.likes }}
           </button>
-          <a
-            class="download"
-            :href="`/api/project/${projectId}/download`"
-            download
-            v-if="!editing"
-          >
-            <Icon name="ri:download-line" />
-            Download
-          </a>
-          <div v-if="editing">
+          <div v-if="!editing">
+            <a
+              class="package"
+              :href="`/package/${projectId}`"
+            >
+              <Icon name="ri:box-1-fill" />
+              Package
+            </a>
+            <a
+              class="download"
+              :href="`/api/project/${projectId}/download`"
+              download
+            >
+              <Icon name="ri:download-line" />
+              Download
+            </a>
+          </div>
+          <div v-else>
             <button class="upload" @click="projectUpload.click()">
               <Icon name="ri:upload-line" /> Upload
             </button>
@@ -687,7 +695,7 @@ body.project-page main {
       & > textarea {
         background: none;
         width: 100%;
-        height: calc(100% - 6rem);
+        height: 100%;
         border: none;
         resize: none;
         color: inherit;
@@ -717,7 +725,8 @@ body.project-page main {
 
 /* FIXME: this needs to be a separate component */
 button,
-a.download {
+a.download,
+a.package {
   background: var(--color-primary);
   border: none;
   font-size: 0.875rem;
