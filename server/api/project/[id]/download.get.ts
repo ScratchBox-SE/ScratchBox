@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
       `attachment; filename="${
         (await db.select().from(schema.projects).where(
           eq(schema.projects.id, projectId),
-        ))[0].name
+        ))[0]?.name
       }.sb3"`,
     );
 
