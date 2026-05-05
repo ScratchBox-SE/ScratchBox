@@ -7,7 +7,7 @@ const { data: results, pending } = await useAsyncData(
   "search-results",
   () => {
     return $fetch<{ name: string; description: string; id: string }[]>(
-      `/api/search?q=${route.query.q}&p=${route.query.p || "1"}`,
+      `/api/search?q=${route.query.q}&p=${route.query.p || "1"}&ps=12`,
     );
   },
   {

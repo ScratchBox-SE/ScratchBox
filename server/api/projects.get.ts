@@ -4,7 +4,7 @@ import { count, desc, eq, not } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery<{ sort: string; p: string; ps: string }>(event);
-  const pageSize = Number(query.ps || "9");
+  const pageSize = Number(query.ps || "20");
   const offset = (Number(query.p || "1") - 1) * pageSize;
 
   let dbOperation;

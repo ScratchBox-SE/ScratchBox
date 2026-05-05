@@ -5,7 +5,7 @@ const { data: projects, pending } = await useAsyncData(
   "explore-results",
   () => {
     return $fetch<{ name: string; description: string; id: string }[]>(
-      `/api/projects?sort=likes&p=${route.query.p || "1"}`,
+      `/api/projects?sort=likes&p=${route.query.p || "1"}&ps=12`,
     );
   },
   {

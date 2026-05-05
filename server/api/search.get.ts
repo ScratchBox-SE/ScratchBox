@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery<{ q: string; p: string; ps: string }>(event);
-  const pageSize = Number(query.ps || "9");
+  const pageSize = Number(query.ps || "20");
 
   return db
     .all(
