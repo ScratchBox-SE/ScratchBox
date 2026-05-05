@@ -16,12 +16,14 @@ const { data: fetchedProject, error: fetchError } = await useFetch<{
   createdAt: string;
   private: boolean;
   user: string;
+  userPicture: string;
   likes: number;
   tags: (keyof typeof tagsMap)[];
   comments: {
     id: number;
     originalId: number;
     user: string;
+    userPicture: string;
     createdAt: string;
     content: string;
     edited: boolean;
@@ -48,25 +50,7 @@ const sortedComments = computed(() => {
       timeSince: useFormatedTime(new Date(comment.createdAt)),
     }));
 });
-const commentProfiles = ref<string[]>([]);
-watch(
-  sortedComments,
-  async () => {
-    if (sortedComments.value.length === 0) {
-      commentProfiles.value = [];
-      return;
-    }
 
-    commentProfiles.value = (await Promise.all(
-      sortedComments.value.map(
-        (comment) => getProfilePicture(comment.user).catch(() => null), // handle errors per request
-      ),
-    )) as string[];
-  },
-  { immediate: true },
-);
-
-const profilePicture = await getProfilePicture(project.value?.user);
 const { data: liked } = await useFetch<boolean>(
   `/api/project/${projectId}/liked`,
   {
@@ -203,6 +187,7 @@ const comment = async () => {
       id: commentId,
       originalId: commentId,
       user: user.username,
+      userPicture: await getProfilePicture(user.username) as string,
       createdAt: new Date().toString(),
       content: commentContent.value,
       edited: false,
@@ -257,9 +242,9 @@ onMounted(() => {
   resizeNameInput();
 });
 
-var thumbnail = `/api/project/${projectId}/thumbnail`;
+let thumbnail = `/api/project/${projectId}/thumbnail`;
 try {
-  const { _ } = await $fetch(thumbnail);
+  await $fetch(thumbnail);
 } catch {
   thumbnail = "/default-thumbnail.png";
 }
@@ -317,7 +302,7 @@ const openEditor = async () => {
         </p>
       </div>
       <div>
-        <img :src="profilePicture as string" /> By
+        <img :src="project?.userPicture" /> By
         <NuxtLink :to="`/user/${project?.user}`">{{ project?.user }}</NuxtLink>
 
         <div class="options-right">
@@ -414,10 +399,10 @@ const openEditor = async () => {
       </div>
     </div>
 
-    <div class="comment" v-for="(comment, i) in sortedComments">
+    <div class="comment" v-for="comment in sortedComments">
       <div class="comment-header">
         <NuxtLink class="comment-profile" :to="`/user/${comment.user}`">
-          <img :src="commentProfiles[i]" />
+          <img :src="comment.userPicture" />
           {{ comment.user }}
         </NuxtLink>
 

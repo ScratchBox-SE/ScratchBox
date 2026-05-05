@@ -2,7 +2,17 @@
 const authRedirect = btoa(`${useRequestURL().origin}/api/auth`);
 
 const user = await useCurrentUser();
-const profilePicture = await getProfilePicture(user?.username);
+
+const { data: profilePicture } = await useAsyncData(
+  `profile-${user.username}`,
+  async () => {
+    return await getProfilePicture(user.username);
+  },
+  {
+    watch: [() => user?.username],
+    immediate: !!user?.username,
+  },
+);
 
 const upload = useTemplateRef("upload") as Ref<HTMLInputElement>;
 const { handleFileInput, files } = useFileStorage({ clearOldFiles: false });
