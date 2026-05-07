@@ -68,40 +68,42 @@ export default defineEventHandler(async (event) => {
     eq(schema.projects.id, projectId),
   );
 
-  const allTags = [
-    "dual-screen",
-    "balanced",
-    "heavy",
-    "light",
-    "cursor",
-  ] as const;
+  if (body.tags) {
+    const allTags = [
+      "dual-screen",
+      "balanced",
+      "heavy",
+      "light",
+      "cursor",
+    ] as const;
 
-  const currentTags = (await db.select({
-    tag: schema.projectTags.tag,
-  }).from(
-    schema.projectTags,
-  ).where(
-    and(
-      eq(schema.projectTags.projectId, projectId),
-    ),
-  )).map((item) => item.tag);
-
-  for (const tag of allTags) {
-    if (body.tags.includes(tag) === currentTags.includes(tag)) continue;
-
-    if (
-      body.tags.includes(tag) && !currentTags.includes(tag)
-    ) {
-      await db.insert(schema.projectTags).values({ projectId, tag });
-      continue;
-    }
-
-    await db.delete(schema.projectTags).where(
+    const currentTags = (await db.select({
+      tag: schema.projectTags.tag,
+    }).from(
+      schema.projectTags,
+    ).where(
       and(
         eq(schema.projectTags.projectId, projectId),
-        eq(schema.projectTags.tag, tag),
       ),
-    );
+    )).map((item) => item.tag);
+
+    for (const tag of allTags) {
+      if (body.tags.includes(tag) === currentTags.includes(tag)) continue;
+
+      if (
+        body.tags.includes(tag) && !currentTags.includes(tag)
+      ) {
+        await db.insert(schema.projectTags).values({ projectId, tag });
+        continue;
+      }
+
+      await db.delete(schema.projectTags).where(
+        and(
+          eq(schema.projectTags.projectId, projectId),
+          eq(schema.projectTags.tag, tag),
+        ),
+      );
+    }
   }
 
   if (body.file) {
