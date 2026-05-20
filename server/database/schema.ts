@@ -58,3 +58,10 @@ export const userRoles = sqliteTable("user_roles", {
 }, (t) => [
   primaryKey({ columns: [t.user, t.role] }),
 ]);
+
+export const packageTasks = sqliteTable("package_tasks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  projectId: text("project_id").notNull().references(() => projects.id),
+  status: text("status").notNull().default("pending"), // pending, completed, failed
+  outputPath: text("output_path"),
+});
