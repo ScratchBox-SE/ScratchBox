@@ -307,7 +307,7 @@ nav {
       border-radius: 0.5rem;
       width: 100%;
       max-width: 25rem;
-      transition: 50ms background ease-in-out;
+      transition: 100ms background ease-in-out;
 
       &::placeholder {
         color: var(--color-primary-text);
