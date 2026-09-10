@@ -45,6 +45,14 @@ export const unistoreData = sqliteTable("unistore_data", {
   revision: integer("revision").notNull(),
 });
 
+export const authTokens = sqliteTable("auth_tokens", {
+  privateCode: text("private_code").notNull().primaryKey(),
+  publicCode: text("public_code").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(
+    sql`(strftime('%s', 'now'))`,
+  ).notNull(),
+});
+
 export const userRoles = sqliteTable("user_roles", {
   user: text("user").notNull(),
   role: text("role").notNull(),

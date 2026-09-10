@@ -1,6 +1,4 @@
 <script setup lang="ts">
-const authRedirect = btoa(`${useRequestURL().origin}/api/auth`);
-
 const user = await useCurrentUser();
 
 const { data: profilePicture } = await useAsyncData(
@@ -140,11 +138,7 @@ onUnmounted(() => {
           </div>
         </Transition>
       </div>
-      <NuxtLink
-        :to="`https://auth.itinerary.eu.org/auth/?redirect=${authRedirect}&name=ScratchBox`"
-        target="_blank"
-        v-else
-      >Log In</NuxtLink>
+      <NuxtLink to="/login" v-else>Log In</NuxtLink>
     </div>
     <div class="mobile" ref="mobileMenuRef">
       <div class="bar">
@@ -200,11 +194,7 @@ onUnmounted(() => {
               </div>
             </Transition>
           </div>
-          <NuxtLink
-            :to="`https://auth.itinerary.eu.org/auth/?redirect=${authRedirect}&name=ScratchBox`"
-            target="_blank"
-            v-else
-          >Log In</NuxtLink>
+          <NuxtLink to="/login" v-else>Log In</NuxtLink>
         </div>
       </Transition>
     </div>
