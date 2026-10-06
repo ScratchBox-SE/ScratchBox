@@ -24,3 +24,8 @@ logs
 
 # Database
 *.db
+
+# Local Root
+/sb-root
+/root
+/scratchbox-root
