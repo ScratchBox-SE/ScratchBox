@@ -30,15 +30,7 @@ onMounted(() => {
 });
 
 const handleClick = (e: MouseEvent) => {
-  const rect = dialogRef.value?.getBoundingClientRect();
-  if (!rect) return;
-
-  if (
-    e.clientX < rect.left ||
-    e.clientX > rect.right ||
-    e.clientY < rect.top ||
-    e.clientY > rect.bottom
-  ) {
+  if (e.target === dialogRef.value) {
     emit("update:open", false);
   }
 };
