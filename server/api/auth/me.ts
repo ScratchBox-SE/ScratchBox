@@ -22,9 +22,11 @@ export default defineEventHandler(async (event) => {
 
   try {
     const decoded = jwt.verify(token, useRuntimeConfig().jwtSecret);
+    const ban = await getActiveBan((decoded as { username: string }).username);
 
     return {
       user: decoded,
+      ban: ban ? { reason: ban.description, expiresAt: ban.expiresAt } : null,
     };
   } catch (e) {
     throw createError({

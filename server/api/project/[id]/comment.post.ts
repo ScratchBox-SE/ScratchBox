@@ -23,6 +23,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  await assertNotBanned((decoded as { username: string }).username);
+
   const content = await readRawBody(event) as string;
   if (!content) {
     throw createError({

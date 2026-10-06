@@ -2,13 +2,19 @@ import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
 import { db } from "../../utils/drizzle";
 import * as schema from "../../database/schema";
-import { AUTH_TOKEN_VALIDITY_MS, findVerifyingComment } from "../../utils/scratchAuth";
+import {
+  AUTH_TOKEN_VALIDITY_MS,
+  findVerifyingComment,
+} from "../../utils/scratchAuth";
 
 export default defineEventHandler(async (event) => {
   const privateCode = getQuery(event).privateCode as string;
 
   if (!privateCode) {
-    throw createError({ statusCode: 400, statusMessage: "Missing privateCode" });
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Missing privateCode",
+    });
   }
 
   const pending = (await db.select().from(schema.authTokens).where(
@@ -51,5 +57,13 @@ export default defineEventHandler(async (event) => {
     },
   );
 
-  return { valid: true, username };
+  const ban = await getActiveBan(username);
+
+  return {
+    valid: true,
+    username,
+    banned: !!ban,
+    banReason: ban?.description ?? null,
+    banExpiresAt: ban?.expiresAt ?? null,
+  };
 });

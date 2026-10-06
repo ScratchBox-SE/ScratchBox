@@ -23,6 +23,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  await assertNotBanned((decoded as { username: string }).username);
+
   const file = await readBody<ServerFile>(event);
   if (!file.name.endsWith(".sb3")) {
     throw createError({ statusCode: 415, statusMessage: "Invalid file type" });

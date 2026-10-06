@@ -37,6 +37,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  await assertNotBanned((decoded as { username: string }).username);
+
   const body = await readBody<
     {
       file?: ServerFile;

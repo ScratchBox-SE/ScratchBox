@@ -1,6 +1,9 @@
 import { db } from "../../utils/drizzle";
 import * as schema from "../../database/schema";
-import { generatePrivateCode, generatePublicCode } from "../../utils/scratchAuth";
+import {
+  generatePrivateCode,
+  generatePublicCode,
+} from "../../utils/scratchAuth";
 
 export default defineEventHandler(async (event) => {
   const privateCode = generatePrivateCode();

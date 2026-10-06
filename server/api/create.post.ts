@@ -23,6 +23,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  await assertNotBanned((decoded as { username: string }).username);
+
   const { name } = await readBody<{ name: string }>(event);
 
   const characters =

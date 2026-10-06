@@ -11,8 +11,9 @@ export const useCurrentUser = async () => {
     return {
       loggedIn: !!user.value?.user,
       username: (user.value?.user as { username: string }).username || "",
+      ban: user.value?.ban ?? null,
     };
   } catch {
-    return { loggedIn: false, username: "" };
+    return { loggedIn: false, username: "", ban: null };
   }
 };

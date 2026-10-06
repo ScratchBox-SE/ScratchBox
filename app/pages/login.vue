@@ -9,13 +9,15 @@ useHead({
 const route = useRoute();
 const redirect = (route.query.redirect as string) || "/";
 
-const status = ref<"loading" | "waiting" | "expired" | "error" | "success">(
-  "loading",
-);
+const status = ref<
+  "loading" | "waiting" | "expired" | "error" | "success" | "banned"
+>("loading");
 const publicCode = ref("");
 const projectId = ref<string>();
 const privateCode = ref("");
 const copied = ref(false);
+const banReason = ref<string | null>(null);
+const banExpiresAt = ref<string | null>(null);
 
 let pollTimer: ReturnType<typeof setInterval> | undefined;
 let copiedTimer: ReturnType<typeof setTimeout> | undefined;
@@ -48,7 +50,12 @@ const poll = () => {
       const data = await $fetch("/api/auth/status", {
         query: { privateCode: privateCode.value },
       });
-      if (data.valid) {
+      if (data.valid && data.banned) {
+        clearInterval(pollTimer);
+        status.value = "banned";
+        banReason.value = data.banReason;
+        banExpiresAt.value = data.banExpiresAt;
+      } else if (data.valid) {
         clearInterval(pollTimer);
         status.value = "success";
         // Force a full page load so the new SB_TOKEN cookie is picked up
@@ -63,6 +70,10 @@ const poll = () => {
       // transient errors while polling are ignored, just try again
     }
   }, 4000);
+};
+
+const continueToSite = () => {
+  window.location.href = redirect;
 };
 
 onMounted(start);
@@ -106,6 +117,21 @@ onUnmounted(() => {
         We'll detect your comment automatically, usually within a few
         seconds. This page will redirect you once it's found.
       </p>
+    </template>
+
+    <template v-else-if="status === 'banned'">
+      <p>
+        This account has been banned{{
+          banExpiresAt
+            ? ` until ${new Date(banExpiresAt).toLocaleString()}`
+            : ""
+        }}{{ banReason ? `: ${banReason}` : "." }}
+      </p>
+      <p class="hint">
+        You can still log in to browse ScratchBox, but you won't be able to
+        comment, like, or create/edit projects while banned.
+      </p>
+      <button @click="continueToSite">Continue</button>
     </template>
 
     <template v-else-if="status === 'expired'">
