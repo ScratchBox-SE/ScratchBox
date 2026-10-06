@@ -31,9 +31,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { id, originalId, content } = JSON.parse(body as string) as {
+  const { id, content } = JSON.parse(body as string) as {
     id: number;
-    originalId: number;
     content: string;
   };
 
@@ -54,12 +53,26 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const commentAuthor = db.select({
+  const projectId = getRouterParam(event, "id") as string;
+
+  const existingComment = db.select({
     user: schema.projectComments.user,
+    projectId: schema.projectComments.projectId,
+    originalId: schema.projectComments.originalId,
   }).from(schema.projectComments).where(eq(schema.projectComments.id, id))
     .get();
 
-  if (typeof decoded !== "string" && decoded.username !== commentAuthor?.user) {
+  if (!existingComment || existingComment.projectId !== projectId) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: "Comment not found",
+    });
+  }
+
+  if (
+    typeof decoded !== "string" &&
+    decoded.username !== existingComment.user
+  ) {
     throw createError({
       statusCode: 403,
       statusMessage: "Comment author does not match requesting user",
@@ -67,8 +80,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const newComment = await db.insert(schema.projectComments).values({
-    projectId: getRouterParam(event, "id") as string,
-    originalId,
+    projectId,
+    originalId: existingComment.originalId,
     user: (decoded as { username: string }).username,
     content,
     createdAt: new Date(),
