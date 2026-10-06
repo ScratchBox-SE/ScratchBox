@@ -10,6 +10,10 @@ const projects = await $fetch<{
 
 const profilePicture = await getProfilePicture(route.params.name as string);
 
+const roles = await $fetch<string[]>(
+  `/api/user/${route.params.name}/roles`,
+).catch(() => []);
+
 useHead({
   title: `${
     projects.private ? "Your" : `${route.params.name}'s`
@@ -35,6 +39,13 @@ useHead({
       <img :src="profilePicture as string" />
       {{ projects.private ? "Your" : `${route.params.name}'s` }} Profile
     </h1>
+    <div class="role-badges" v-if="roles.length > 0">
+      <span
+        v-for="role in roles"
+        class="role-badge"
+        :class="{ banned: role === 'banned' }"
+      >{{ role }}</span>
+    </div>
     <p v-if="projects.private === undefined && projects.public.length === 0">
       {{ route.params.name }} doesn't have any public projects yet.
     </p>
@@ -90,6 +101,27 @@ body.profile-page main {
     & img {
       border-radius: 1rem;
       height: 4rem;
+    }
+  }
+}
+
+.role-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: -0.5rem;
+
+  & .role-badge {
+    background: var(--color-secondary-background);
+    padding: 0.25rem 0.75rem;
+    border-radius: 2rem;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: capitalize;
+
+    &.banned {
+      background: var(--color-error-background);
+      color: var(--color-error);
     }
   }
 }
