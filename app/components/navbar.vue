@@ -57,6 +57,9 @@ if (user.loggedIn) {
   } catch {}
 }
 
+const canModerate = userRoles.includes("admin") ||
+  userRoles.includes("moderator");
+
 const isDropdownOpen = ref(false);
 const dropdownRef = useTemplateRef("dropdownRef");
 
@@ -107,7 +110,7 @@ onUnmounted(() => {
       </template>
       <NuxtLink v-else :to="editorURL">Create</NuxtLink>
       <NuxtLink to="/explore">Explore</NuxtLink>
-      <NuxtLink v-if='userRoles.includes("admin")' to="/admin"
+      <NuxtLink v-if="canModerate" to="/admin"
       >Moderate</NuxtLink>
       <input
         type="search"
@@ -174,7 +177,7 @@ onUnmounted(() => {
           </template>
           <NuxtLink v-else :to="editorURL">Create</NuxtLink>
           <NuxtLink to="/explore">Explore</NuxtLink>
-          <NuxtLink v-if='userRoles.includes("admin")' to="/admin"
+          <NuxtLink v-if="canModerate" to="/admin"
           >Moderate</NuxtLink>
           <div class="dropdown" v-if="user.loggedIn">
             <a

@@ -24,22 +24,14 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const tokenUser = typeof decoded !== "string" ? decoded.username : null;
-  const tokenRoles = typeof decoded !== "string"
-    ? (
-      await db
-        .select({ role: schema.userRoles.role })
-        .from(schema.userRoles)
-        .where(eq(schema.userRoles.user, tokenUser))
-    ).map((r) => r.role)
-    : [];
-
-  if (!tokenRoles.includes("admin")) {
+  if (typeof decoded === "string") {
     throw createError({
-      statusCode: 403,
-      statusMessage: "Forbidden",
+      statusCode: 401,
+      statusMessage: "Unauthorized",
     });
   }
+
+  const actingRoles = await assertCanModerate(decoded.username);
 
   const role: string = (JSON.parse(await readRawBody(event) as string)).role;
   if (!role) {
@@ -48,6 +40,8 @@ export default defineEventHandler(async (event) => {
       statusMessage: "No role provided",
     });
   }
+
+  await assertCanManageRole(actingRoles, user, role);
 
   // set expiresAt to now
   // means role is no longer active but we still have ban history

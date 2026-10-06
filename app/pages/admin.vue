@@ -17,12 +17,19 @@ if (user.loggedIn) {
   });
 }
 
-if (!userRoles.includes("admin")) {
+if (!userRoles.includes("admin") && !userRoles.includes("moderator")) {
   throw createError({
     statusCode: 403,
     statusMessage: "Forbidden",
   });
 }
+
+const isAdmin = userRoles.includes("admin");
+
+const isElevatedUser = (username: string) =>
+  allRoles.value.some(
+    (r) => r.user === username && ["admin", "moderator"].includes(r.role),
+  );
 
 interface RoleReturn {
   role: string;
@@ -210,7 +217,7 @@ const formatExpiryDate = computed(() => {
 </script>
 <template>
   <section class="container">
-    <h1>Admin Panel</h1>
+    <h1>Moderation Panel</h1>
 
     <section>
       <h3>Active roles</h3>
@@ -237,7 +244,10 @@ const formatExpiryDate = computed(() => {
         </div>
 
         <button
-          v-if='!(role.user == user.username && role.role == "admin")'
+          v-if='
+            !(role.user == user.username && role.role == "admin") &&
+            (isAdmin || !isElevatedUser(role.user))
+          '
           @click="setSelectedRole(i)"
         >
           <Icon name="ri:delete-bin-line" size="20" style="color: white" />
@@ -267,7 +277,10 @@ const formatExpiryDate = computed(() => {
     <label for="selectedRole">Role <span class="required">*</span></label>
     <select v-model="formState.selectedRole" id="selectedRole">
       <option value="banned">Banned</option>
-      <option value="admin">Admin</option>
+      <template v-if="isAdmin">
+        <option value="moderator">Moderator</option>
+        <option value="admin">Admin</option>
+      </template>
     </select>
 
     <label for="expiryDate">Expires At</label>
@@ -286,7 +299,9 @@ main {
   flex-direction: column;
   align-items: center;
 }
-input, select, option {
+input,
+select,
+option {
   padding: 0.25rem;
   border-radius: 0.25rem;
   font-size: 1rem;
@@ -295,7 +310,8 @@ input, select, option {
   border: 2px solid var(--color-background);
 }
 
-input:focus, select:focus {
+input:focus,
+select:focus {
   outline: none;
   border-color: var(--color-primary);
 }
@@ -456,4 +472,3 @@ button {
   }
 }
 </style>
-

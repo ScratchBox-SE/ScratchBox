@@ -1,7 +1,7 @@
 import { db } from "../../utils/drizzle";
 import * as schema from "../../database/schema";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { eq, gt, isNull, or } from "drizzle-orm";
+import { gt, isNull, or } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const token = getCookie(event, "SB_TOKEN");
@@ -23,22 +23,14 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const tokenUser = typeof decoded !== "string" ? decoded.username : null;
-  const tokenRoles = typeof decoded !== "string"
-    ? (
-      await db
-        .select({ role: schema.userRoles.role })
-        .from(schema.userRoles)
-        .where(eq(schema.userRoles.user, tokenUser))
-    ).map((r) => r.role)
-    : [];
-
-  if (!tokenRoles.includes("admin")) {
+  if (typeof decoded === "string") {
     throw createError({
-      statusCode: 403,
-      statusMessage: "Forbidden",
+      statusCode: 401,
+      statusMessage: "Unauthorized",
     });
   }
+
+  await assertCanModerate(decoded.username);
 
   const roles = await db
     .select({
