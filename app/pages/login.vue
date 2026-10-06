@@ -121,11 +121,7 @@ onUnmounted(() => {
 
     <template v-else-if="status === 'banned'">
       <p>
-        This account has been banned{{
-          banExpiresAt
-            ? ` until ${new Date(banExpiresAt).toLocaleString()}`
-            : ""
-        }}{{ banReason ? `: ${banReason}` : "." }}
+        This account has been banned{{ banExpiresAt ? ` until ${new Date(banExpiresAt).toLocaleString()}` : "" }}{{ banReason ? `: ${banReason}` : "." }}
       </p>
       <p class="hint">
         You can still log in to browse ScratchBox, but you won't be able to

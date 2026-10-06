@@ -5,11 +5,23 @@ const { data: projects, pending } = await useAsyncData(
   "explore-results",
   () => {
     return $fetch<{ name: string; description: string; id: string }[]>(
-      `/api/projects?sort=likes&p=${route.query.p || "1"}&ps=12`,
+      "/api/projects",
+      {
+        query: {
+          sort: route.query.sort || "newest",
+          tags: route.query.tags,
+          p: route.query.p || "1",
+          ps: 12,
+        },
+      },
     );
   },
   {
-    watch: [() => route.query.p],
+    watch: [
+      () => route.query.p,
+      () => route.query.sort,
+      () => route.query.tags,
+    ],
   },
 );
 
@@ -23,7 +35,6 @@ useHead({
 <template>
   <NuxtLayout
     name="projects"
-    path="explore"
     :projects="projects"
     :pending="pending"
   />

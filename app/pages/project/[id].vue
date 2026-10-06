@@ -1,12 +1,4 @@
 <script setup lang="ts">
-const tagsMap = {
-  "dual-screen": "Dual Screen",
-  "cursor": "Cursor",
-  "heavy": "Heavy",
-  "light": "Light",
-  "balanced": "Balanced",
-} as const;
-
 const projectId = useRoute().params.id;
 
 const { data: fetchedProject, error: fetchError } = await useFetch<{
@@ -316,17 +308,15 @@ const openEditor = async () => {
         rows="1"
       />
       <div class="tags" v-if="tags.length > 0 || editing">
-        <p
+        <TagPill
           v-for="(name, tag) in tagsMap"
           v-show="tags.includes(tag) || editing"
-        >
-          {{ name }}
-          <Icon
-            v-if="editing"
-            :name='tags.includes(tag) ? "ri:close-line" : "ri:add-line"'
-            @click="addOrRemoveTag(tag)"
-          />
-        </p>
+          :key="tag"
+          :label="name"
+          :selected="tags.includes(tag)"
+          :interactive="editing"
+          @toggle="addOrRemoveTag(tag)"
+        />
       </div>
       <div>
         <img :src="project?.userPicture" /> By
@@ -633,19 +623,6 @@ body.project-page main {
       gap: 0.5rem;
       flex-wrap: wrap;
       margin-bottom: 1rem;
-
-      & p {
-        background: var(--color-secondary-background);
-        padding: 0.5rem 1rem;
-        border-radius: 2rem;
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-
-        & span {
-          cursor: pointer;
-        }
-      }
     }
 
     & > object,

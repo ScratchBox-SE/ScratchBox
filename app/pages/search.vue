@@ -7,11 +7,25 @@ const { data: results, pending } = await useAsyncData(
   "search-results",
   () => {
     return $fetch<{ name: string; description: string; id: string }[]>(
-      `/api/search?q=${route.query.q}&p=${route.query.p || "1"}&ps=12`,
+      "/api/search",
+      {
+        query: {
+          q: route.query.q,
+          sort: route.query.sort,
+          tags: route.query.tags,
+          p: route.query.p || "1",
+          ps: 12,
+        },
+      },
     );
   },
   {
-    watch: [() => route.query.q, () => route.query.p],
+    watch: [
+      () => route.query.q,
+      () => route.query.p,
+      () => route.query.sort,
+      () => route.query.tags,
+    ],
   },
 );
 
@@ -25,7 +39,6 @@ useHead({
 <template>
   <NuxtLayout
     name="projects"
-    :path="`search?q=${route.query.q}`"
     :projects="results"
     :pending="pending"
   >

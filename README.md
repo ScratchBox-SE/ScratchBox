@@ -40,7 +40,7 @@ A WIP project hosting/distribution platform for Scratch Everywhere!
     - [ ] Make them give a reason
   - [ ] Allow viewing comment history
 - [x] TOS/Rules
-- [ ] Platform/sorted search
+- [x] Filtered/sorted search
 - [ ] Project Pages
   - [ ] Required extensions (Once implemented in SE!)
   - [x] Thumbnail
