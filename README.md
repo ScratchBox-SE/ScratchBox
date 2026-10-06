@@ -48,10 +48,7 @@ A WIP project hosting/distribution platform for Scratch Everywhere!
 - [x] Account profiles
 - [x] Improved Error Handling
 - [x] Editor
-- [ ] Homebrew App Store Integrations
-  - [ ] Wii U Homebrew App Store
-  - [ ] Switch Homebrew App Store
-  - [x] Unistore
+- [x] Unistore
 - [x] Commenting
   - [x] Create comments
   - [x] Edit comments
