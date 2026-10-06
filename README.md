@@ -41,8 +41,7 @@ A WIP project hosting/distribution platform for Scratch Everywhere!
   - [ ] Allow viewing comment history
 - [x] TOS/Rules
 - [x] Filtered/sorted search
-- [ ] Project Pages
-  - [ ] Required extensions (Once implemented in SE!)
+- [x] Project Pages
   - [x] Thumbnail
   - [x] Markdown Support
 - [x] API for user projects
@@ -61,7 +60,6 @@ A WIP project hosting/distribution platform for Scratch Everywhere!
 ## Post-Testing
 
 - [x] Mobile/Small Screen Support
-- [ ] Support for (hosting) custom extensions (Once implemented in SE!)
 - [ ] Easy configuration and customizability
 - [ ] Multi-`.sb3` projects (for each platform)
 - [ ] Desktop App
