@@ -27,6 +27,7 @@ const { data: fetchedProject, error: fetchError } = await useFetch<{
     createdAt: string;
     content: string;
     edited: boolean;
+    deleted: boolean;
   }[];
 }>(`/api/project/${projectId}`);
 
@@ -191,6 +192,7 @@ const comment = async () => {
       createdAt: new Date().toString(),
       content: commentContent.value,
       edited: false,
+      deleted: false,
     },
   ];
   commentContent.value = "";
@@ -235,6 +237,31 @@ const saveComment = async () => {
       original.id = res;
     }
     editingComment.value = { id: 0, content: "" };
+  }
+};
+
+const deleteComment = async (comment: { id: number }) => {
+  if (!confirm("Delete this comment? This can't be undone.")) return;
+
+  const res = await $fetch(`/api/project/${projectId}/comment`, {
+    method: "DELETE",
+    headers: useRequestHeaders(["cookie"]),
+    body: { id: comment.id },
+  });
+
+  // using this as an OK response check for now
+  if (typeof res === "number") {
+    const original = project.value!.comments.find(
+      (c) => c.id === comment.id,
+    );
+    if (original) {
+      original.content = "";
+      original.deleted = true;
+      original.id = res;
+    }
+    if (editingComment.value.id === comment.id) {
+      editingComment.value = { id: 0, content: "" };
+    }
   }
 };
 
@@ -406,16 +433,28 @@ const openEditor = async () => {
           {{ comment.user }}
         </NuxtLink>
 
-        <button
-          v-if="editingComment.id === 0 && comment.user === user.username"
-          @click="editComment(comment)"
+        <div
+          class="comment-actions"
+          v-if="
+            !comment.deleted &&
+            editingComment.id === 0 &&
+            comment.user === user.username
+          "
         >
-          <Icon id="edit-icon" name="ri:pencil-fill" />
-        </button>
+          <button @click="editComment(comment)">
+            <Icon id="edit-icon" name="ri:pencil-fill" />
+          </button>
+          <button @click="deleteComment(comment)">
+            <Icon id="delete-icon" name="ri:delete-bin-line" />
+          </button>
+        </div>
       </div>
 
+      <p class="deleted-comment" v-if="comment.deleted">
+        [deleted]
+      </p>
       <MarkdownText
-        v-if="editingComment.id !== comment.id"
+        v-else-if="editingComment.id !== comment.id"
         :markdown="comment.content"
       />
       <div class="textarea-container" v-else>
@@ -437,7 +476,7 @@ const openEditor = async () => {
       </div>
 
       <div id="timestamp" v-if="editingComment.id !== comment.id">
-        <span v-if="comment.edited">(edited)</span>
+        <span v-if="comment.edited && !comment.deleted">(edited)</span>
         <span>{{ comment.timeSince }}</span>
       </div>
     </div>
@@ -480,6 +519,11 @@ body.project-page main {
     width: 100%;
     margin-bottom: 1rem;
 
+    & .comment-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
     & button {
       border: none;
       padding: 0.5rem;
@@ -490,11 +534,17 @@ body.project-page main {
       position: static;
       border-radius: 100%;
 
-      & #edit-icon {
+      & #edit-icon,
+      & #delete-icon {
         position: static;
         opacity: 1;
       }
     }
+  }
+
+  & .deleted-comment {
+    opacity: 0.6;
+    font-style: italic;
   }
 
   & .comment-profile {

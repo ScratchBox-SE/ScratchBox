@@ -39,6 +39,7 @@ export const projectComments = sqliteTable("project_comments", {
   createdAt: integer("created_at", { mode: "timestamp" }).default(
     sql`(strftime('%s', 'now'))`,
   ).notNull(),
+  deleted: integer("deleted", { mode: "boolean" }).default(false).notNull(),
 });
 
 export const unistoreData = sqliteTable("unistore_data", {

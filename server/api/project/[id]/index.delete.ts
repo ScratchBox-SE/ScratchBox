@@ -35,6 +35,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  await assertNotBanned((decoded as { username: string }).username);
+
   await db.update(schema.unistoreData).set({
     revision: (await db.select().from(schema.unistoreData))[0]!.revision + 1,
   });

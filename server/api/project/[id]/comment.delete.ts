@@ -33,25 +33,12 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { id, content } = JSON.parse(body as string) as {
-    id: number;
-    content: string;
-  };
+  const { id } = JSON.parse(body as string) as { id: number };
 
   if (!id) {
     throw createError({
       statusCode: 400,
       statusMessage: "No comment ID provided",
-    });
-  } else if (!content) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "No comment body provided",
-    });
-  } else if (content.length > 500) {
-    throw createError({
-      statusCode: 413,
-      statusMessage: "Comment body must be 500 characters or less",
     });
   }
 
@@ -85,7 +72,7 @@ export default defineEventHandler(async (event) => {
   if (existingComment.deleted) {
     throw createError({
       statusCode: 409,
-      statusMessage: "Can't edit a deleted comment",
+      statusMessage: "Comment is already deleted",
     });
   }
 
@@ -93,7 +80,8 @@ export default defineEventHandler(async (event) => {
     projectId,
     originalId: existingComment.originalId,
     user: (decoded as { username: string }).username,
-    content,
+    content: "",
+    deleted: true,
     createdAt: new Date(),
   });
 

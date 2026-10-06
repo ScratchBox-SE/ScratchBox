@@ -38,6 +38,7 @@ A WIP project hosting/distribution platform for Scratch Everywhere!
   - [x] Easy way to make people mods/admins
   - [ ] Allow mods to edit project info
     - [ ] Make them give a reason
+  - [ ] Allow viewing comment history
 - [x] TOS/Rules
 - [ ] Platform/sorted search
 - [ ] Project Pages
@@ -52,10 +53,10 @@ A WIP project hosting/distribution platform for Scratch Everywhere!
   - [ ] Wii U Homebrew App Store
   - [ ] Switch Homebrew App Store
   - [x] Unistore
-- [ ] Commenting
+- [x] Commenting
   - [x] Create comments
   - [x] Edit comments
-  - [ ] Delete comments
+  - [x] Delete comments
 
 ## Post-Testing
 
