@@ -31,9 +31,9 @@ A WIP project hosting/distribution platform for Scratch Everywhere!
 
 - [x] Actually check if the file is a Scratch project.
 - [ ] Moderation
-  - [ ] Reports
-    - [ ] Comments
-    - [ ] Projects
+  - [x] Reports
+    - [x] Comments
+    - [x] Projects
   - [x] Admin/Mod dashboard
   - [x] Easy way to make people mods/admins
   - [ ] Allow mods to edit project info

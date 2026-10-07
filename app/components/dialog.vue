@@ -90,7 +90,8 @@ dialog {
     gap: 1rem;
     font-weight: unset;
 
-    & input {
+    & input,
+    & select {
       background-color: var(--color-background);
       border: none;
       outline: none;
@@ -111,6 +112,10 @@ dialog {
       cursor: pointer;
       font-size: 0.875rem;
       align-self: flex-end;
+
+      & * {
+        color: inherit !important;
+      }
     }
   }
 }

@@ -28,14 +28,22 @@ export default defineEventHandler(async (event) => {
     eq(schema.projects.id, projectId),
   ))[0]!;
 
-  if (project.user != (decoded as { username: string }).username) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Unauthorized",
-    });
+  const username = (decoded as { username: string }).username;
+
+  if (project.user != username) {
+    const roles = await getActiveRoles(username);
+    const isModerator = roles.includes("admin") ||
+      roles.includes("moderator");
+    if (!isModerator) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Unauthorized",
+      });
+    }
+    await assertCanActOnTarget(roles, project.user);
   }
 
-  await assertNotBanned((decoded as { username: string }).username);
+  await assertNotBanned(username);
 
   await db.update(schema.unistoreData).set({
     revision: (await db.select().from(schema.unistoreData))[0]!.revision + 1,

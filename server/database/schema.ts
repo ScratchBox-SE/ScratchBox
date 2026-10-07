@@ -55,6 +55,21 @@ export const authTokens = sqliteTable("auth_tokens", {
   ).notNull(),
 });
 
+export const reports = sqliteTable("reports", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  type: text("type").notNull(), // "project" | "comment"
+  projectId: text("project_id").notNull().references(() => projects.id),
+  commentId: integer("comment_id").references(() => projectComments.id),
+  reporter: text("reporter").notNull(),
+  reason: text("reason").notNull(),
+  status: text("status").default("open").notNull(), // "open" | "resolved" | "dismissed"
+  createdAt: integer("created_at", { mode: "timestamp" }).default(
+    sql`(strftime('%s', 'now'))`,
+  ).notNull(),
+  resolvedAt: integer("resolved_at", { mode: "timestamp" }),
+  resolvedBy: text("resolved_by"),
+});
+
 export const userRoles = sqliteTable("user_roles", {
   user: text("user").notNull(),
   role: text("role").notNull(),

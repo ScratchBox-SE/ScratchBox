@@ -63,10 +63,16 @@ export default defineEventHandler(async (event) => {
     typeof decoded !== "string" &&
     decoded.username !== existingComment.user
   ) {
-    throw createError({
-      statusCode: 403,
-      statusMessage: "Comment author does not match requesting user",
-    });
+    const roles = await getActiveRoles(decoded.username);
+    const isModerator = roles.includes("admin") ||
+      roles.includes("moderator");
+    if (!isModerator) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Comment author does not match requesting user",
+      });
+    }
+    await assertCanActOnTarget(roles, existingComment.user);
   }
 
   if (existingComment.deleted) {
@@ -79,7 +85,7 @@ export default defineEventHandler(async (event) => {
   const newComment = await db.insert(schema.projectComments).values({
     projectId,
     originalId: existingComment.originalId,
-    user: (decoded as { username: string }).username,
+    user: existingComment.user,
     content: "",
     deleted: true,
     createdAt: new Date(),

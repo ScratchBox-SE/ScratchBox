@@ -112,6 +112,8 @@ onUnmounted(() => {
       <NuxtLink to="/explore">Explore</NuxtLink>
       <NuxtLink v-if="canModerate" to="/admin"
       >Moderate</NuxtLink>
+      <NuxtLink v-if="canModerate" to="/reports"
+      >Reports</NuxtLink>
       <input
         type="search"
         placeholder="Search..."
@@ -179,6 +181,8 @@ onUnmounted(() => {
           <NuxtLink to="/explore">Explore</NuxtLink>
           <NuxtLink v-if="canModerate" to="/admin"
           >Moderate</NuxtLink>
+          <NuxtLink v-if="canModerate" to="/reports"
+          >Reports</NuxtLink>
           <div class="dropdown" v-if="user.loggedIn">
             <a
               href="javascript:void(0);"

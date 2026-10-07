@@ -63,6 +63,21 @@ export const assertCanModerate = async (user: string) => {
   return roles;
 };
 
+export const assertCanActOnTarget = async (
+  actingRoles: string[],
+  targetUser: string,
+) => {
+  if (actingRoles.includes("admin")) return;
+
+  const targetRoles = await getActiveRoles(targetUser);
+  if (targetRoles.some((r) => ELEVATED_ROLES.includes(r))) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: "Moderators can't act on admins or other moderators",
+    });
+  }
+};
+
 export const assertCanManageRole = async (
   actingRoles: string[],
   targetUser: string,
@@ -77,11 +92,5 @@ export const assertCanManageRole = async (
     });
   }
 
-  const targetRoles = await getActiveRoles(targetUser);
-  if (targetRoles.some((r) => ELEVATED_ROLES.includes(r))) {
-    throw createError({
-      statusCode: 403,
-      statusMessage: "Moderators can't act on admins or other moderators",
-    });
-  }
+  await assertCanActOnTarget(actingRoles, targetUser);
 };

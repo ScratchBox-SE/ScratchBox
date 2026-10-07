@@ -133,6 +133,55 @@ const onLike = async () => {
   liked.value = !liked.value;
 };
 
+type ReportTarget = { type: "project" } | { type: "comment"; id: number };
+
+const reportDialogOpen = ref(false);
+const reportTarget = ref<ReportTarget | null>(null);
+const reportReason = ref("");
+const reportError = ref("");
+const reportSubmitting = ref(false);
+const reportSubmitted = ref(false);
+
+const openReportDialog = (target: ReportTarget) => {
+  reportTarget.value = target;
+  reportReason.value = "";
+  reportError.value = "";
+  reportSubmitted.value = false;
+  reportDialogOpen.value = true;
+};
+
+const submitReport = async () => {
+  if (!reportReason.value.trim()) {
+    reportError.value = "Please enter a reason";
+    return;
+  }
+
+  reportSubmitting.value = true;
+  reportError.value = "";
+
+  try {
+    if (reportTarget.value?.type === "comment") {
+      await $fetch(`/api/project/${projectId}/comment/report`, {
+        method: "POST",
+        headers: useRequestHeaders(["cookie"]),
+        body: { id: reportTarget.value.id, reason: reportReason.value },
+      });
+    } else {
+      await $fetch(`/api/project/${projectId}/report`, {
+        method: "POST",
+        headers: useRequestHeaders(["cookie"]),
+        body: { reason: reportReason.value },
+      });
+    }
+    reportSubmitted.value = true;
+  } catch (e) {
+    reportError.value = (e as { data?: { statusMessage?: string } })?.data
+      ?.statusMessage ?? "Failed to submit report";
+  } finally {
+    reportSubmitting.value = false;
+  }
+};
+
 const nameInput = useTemplateRef("nameInput") as Ref<HTMLTextAreaElement>;
 
 const resizeNameInput = () => {
@@ -376,6 +425,12 @@ const openEditor = async () => {
               <button @click="save"><Icon name="ri:save-line" /> Save</button>
             </template>
           </template>
+          <button
+            v-else-if="user.loggedIn && !editing"
+            @click="openReportDialog({ type: 'project' })"
+          >
+            <Icon name="ri:flag-line" /> Report
+          </button>
         </div>
       </div>
       <iframe
@@ -483,6 +538,17 @@ const openEditor = async () => {
               <Icon id="delete-icon" name="ri:delete-bin-line" />
             </button>
           </template>
+          <button
+            v-if="
+              !comment.deleted &&
+              user.loggedIn &&
+              comment.user !== user.username
+            "
+            title="Report comment"
+            @click="openReportDialog({ type: 'comment', id: comment.id })"
+          >
+            <Icon id="report-icon" name="ri:flag-line" />
+          </button>
         </div>
       </div>
 
@@ -537,6 +603,30 @@ const openEditor = async () => {
         <p v-if="version.deleted" class="deleted-comment">[deleted]</p>
         <MarkdownText v-else :markdown="version.content" />
       </div>
+    </template>
+  </Dialog>
+
+  <Dialog
+    :title="reportTarget?.type === 'comment' ? 'Report Comment' : 'Report Project'"
+    v-model:open="reportDialogOpen"
+  >
+    <template v-if="reportSubmitted">
+      <p>Thanks, your report has been submitted for review.</p>
+      <button @click="reportDialogOpen = false">Close</button>
+    </template>
+    <template v-else>
+      <label for="reportReason">Reason <span class="required">*</span></label>
+      <input
+        id="reportReason"
+        type="text"
+        v-model="reportReason"
+        maxlength="500"
+        placeholder="Why are you reporting this?"
+      />
+      <button :disabled="reportSubmitting" @click="submitReport">
+        <Icon name="ri:flag-line" /> Submit Report
+      </button>
+      <p class="message error" v-if="reportError">{{ reportError }}</p>
     </template>
   </Dialog>
 </template>
@@ -594,7 +684,8 @@ body.project-page main {
 
       & #edit-icon,
       & #delete-icon,
-      & #history-icon {
+      & #history-icon,
+      & #report-icon {
         position: static;
         opacity: 1;
       }
@@ -889,5 +980,20 @@ a.download {
       }
     }
   }
+}
+
+.required {
+  color: var(--color-error) !important;
+}
+
+.message {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+.message.error {
+  color: var(--color-error) !important;
+  text-align: center;
+  background-color: var(--color-error-background);
 }
 </style>
