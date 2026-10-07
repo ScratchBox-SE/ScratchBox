@@ -41,7 +41,10 @@ export default defineEventHandler(async (event) => {
   // select all comments from newest to oldest
   const allComments = await db.select().from(schema.projectComments).where(
     eq(schema.projectComments.projectId, projectId),
-  ).orderBy(desc(schema.projectComments.createdAt));
+  ).orderBy(
+    desc(schema.projectComments.createdAt),
+    desc(schema.projectComments.id),
+  );
 
   const commentsById = new Map<number, typeof allComments[0]>();
   allComments.forEach((comment) => {

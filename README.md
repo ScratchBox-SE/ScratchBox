@@ -49,11 +49,11 @@ A WIP project hosting/distribution platform for Scratch Everywhere!
 - [x] Improved Error Handling
 - [x] Editor
 - [x] Unistore
-- [ ] Commenting
+- [x] Commenting
   - [x] Create comments
   - [x] Edit comments
   - [x] Delete comments
-  - [ ] Replies
+  - [x] Replies
 
 ## Post-Testing
 

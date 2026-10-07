@@ -1,7 +1,7 @@
 import { db } from "../../../utils/drizzle";
 import * as schema from "../../../database/schema";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const token = getCookie(event, "SB_TOKEN");
@@ -25,7 +25,19 @@ export default defineEventHandler(async (event) => {
 
   await assertNotBanned((decoded as { username: string }).username);
 
-  const content = await readRawBody(event) as string;
+  const body = await readRawBody(event);
+  if (!body) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "No request body provided",
+    });
+  }
+
+  const { content, parentId } = JSON.parse(body as string) as {
+    content: string;
+    parentId?: number | null;
+  };
+
   if (!content) {
     throw createError({
       statusCode: 400,
@@ -38,9 +50,34 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  const projectId = getRouterParam(event, "id") as string;
+
+  let validatedParentId: number | null = null;
+  if (parentId) {
+    const parentExists = db.select({
+      originalId: schema.projectComments.originalId,
+    })
+      .from(schema.projectComments)
+      .where(
+        and(
+          eq(schema.projectComments.projectId, projectId),
+          eq(schema.projectComments.originalId, parentId),
+        ),
+      ).get();
+
+    if (!parentExists) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: "Parent comment not found",
+      });
+    }
+    validatedParentId = parentId;
+  }
+
   const comment = await db.insert(schema.projectComments).values({
-    projectId: getRouterParam(event, "id") as string,
+    projectId,
     originalId: 0, // we're going to update this in a sec
+    parentId: validatedParentId,
     user: (decoded as { username: string }).username,
     content,
     createdAt: new Date(),

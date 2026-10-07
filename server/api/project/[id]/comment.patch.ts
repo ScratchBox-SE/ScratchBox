@@ -62,6 +62,7 @@ export default defineEventHandler(async (event) => {
     projectId: schema.projectComments.projectId,
     originalId: schema.projectComments.originalId,
     deleted: schema.projectComments.deleted,
+    parentId: schema.projectComments.parentId,
   }).from(schema.projectComments).where(eq(schema.projectComments.id, id))
     .get();
 
@@ -92,6 +93,7 @@ export default defineEventHandler(async (event) => {
   const newComment = await db.insert(schema.projectComments).values({
     projectId,
     originalId: existingComment.originalId,
+    parentId: existingComment.parentId,
     user: (decoded as { username: string }).username,
     content,
     createdAt: new Date(),

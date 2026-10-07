@@ -14,6 +14,7 @@ const { data: fetchedProject, error: fetchError } = await useFetch<{
   comments: {
     id: number;
     originalId: number;
+    parentId: number | null;
     user: string;
     userPicture: string;
     createdAt: string;
@@ -30,18 +31,57 @@ if (fetchError.value) {
 const project = ref() as typeof fetchedProject;
 watch(fetchedProject, (val) => (project.value = val), { immediate: true });
 
-const sortedComments = computed(() => {
-  if (!project.value || !project.value.comments) return [];
+interface CommentNodeData {
+  id: number;
+  originalId: number;
+  parentId: number | null;
+  user: string;
+  userPicture: string;
+  createdAt: string;
+  content: string;
+  edited: boolean;
+  deleted: boolean;
+  timeSince: string;
+  replies: CommentNodeData[];
+}
 
-  return project.value.comments
-    .toSorted(
+const commentTree = computed<CommentNodeData[]>(() => {
+  if (!project.value?.comments) return [];
+
+  const byOriginalId = new Map<number, CommentNodeData>();
+  for (const c of project.value.comments) {
+    byOriginalId.set(c.originalId, {
+      ...c,
+      timeSince: useFormatedTime(new Date(c.createdAt)),
+      replies: [],
+    });
+  }
+
+  const roots: CommentNodeData[] = [];
+  for (const node of byOriginalId.values()) {
+    const parent = node.parentId != null
+      ? byOriginalId.get(node.parentId)
+      : undefined;
+    if (parent) {
+      parent.replies.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+
+  const sortChildren = (node: CommentNodeData) => {
+    node.replies.sort(
       (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    )
-    .map((comment) => ({
-      ...comment,
-      timeSince: useFormatedTime(new Date(comment.createdAt)),
-    }));
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+    node.replies.forEach(sortChildren);
+  };
+  roots.forEach(sortChildren);
+
+  roots.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+  return roots;
 });
 
 const { data: liked } = await useFetch<boolean>(
@@ -275,26 +315,49 @@ const save = async () => {
   }
 };
 
-const comment = async () => {
+const postComment = async (content: string, parentId: number | null) => {
   const commentId = await $fetch(`/api/project/${projectId}/comment`, {
     method: "POST",
     headers: useRequestHeaders(["cookie"]),
-    body: commentContent.value,
+    body: { content, parentId },
   });
   project.value!.comments = [
     ...project.value!.comments,
     {
       id: commentId,
       originalId: commentId,
+      parentId,
       user: user.username,
       userPicture: await getProfilePicture(user.username) as string,
       createdAt: new Date().toString(),
-      content: commentContent.value,
+      content,
       edited: false,
       deleted: false,
     },
   ];
+};
+
+const comment = async () => {
+  if (!commentContent.value.trim()) return;
+  await postComment(commentContent.value, null);
   commentContent.value = "";
+};
+
+const replyingTo = ref<number | null>(null);
+const replyContent = ref("");
+
+const startReply = (originalId: number) => {
+  replyingTo.value = originalId;
+  replyContent.value = "";
+};
+const cancelReply = () => {
+  replyingTo.value = null;
+  replyContent.value = "";
+};
+const submitReply = async () => {
+  if (!replyContent.value.trim() || replyingTo.value == null) return;
+  await postComment(replyContent.value, replyingTo.value);
+  cancelReply();
 };
 
 // Int that points to the comment ID you're editing (and zero represents not editing)
@@ -414,6 +477,23 @@ const viewEditLog = async () => {
     editLogLoading.value = false;
   }
 };
+
+provide("commentContext", {
+  user,
+  canModerate,
+  editingComment,
+  editComment,
+  stopEditingComment,
+  saveComment,
+  deleteComment,
+  viewHistory,
+  openReportDialog,
+  replyingTo,
+  replyContent,
+  startReply,
+  cancelReply,
+  submitReply,
+});
 
 onMounted(() => {
   resizeNameInput();
@@ -611,79 +691,11 @@ const openEditor = async () => {
       </div>
     </div>
 
-    <div class="comment" v-for="comment in sortedComments">
-      <div class="comment-header">
-        <NuxtLink class="comment-profile" :to="`/user/${comment.user}`">
-          <img :src="comment.userPicture" />
-          {{ comment.user }}
-        </NuxtLink>
-
-        <div class="comment-actions">
-          <button
-            v-if="canModerate"
-            title="View history"
-            @click="viewHistory(comment)"
-          >
-            <Icon id="history-icon" name="ri:history-line" />
-          </button>
-          <template
-            v-if="
-              !comment.deleted &&
-              editingComment.id === 0 &&
-              comment.user === user.username
-            "
-          >
-            <button @click="editComment(comment)">
-              <Icon id="edit-icon" name="ri:pencil-fill" />
-            </button>
-            <button @click="deleteComment(comment)">
-              <Icon id="delete-icon" name="ri:delete-bin-line" />
-            </button>
-          </template>
-          <button
-            v-if="
-              !comment.deleted &&
-              user.loggedIn &&
-              comment.user !== user.username
-            "
-            title="Report comment"
-            @click="openReportDialog({ type: 'comment', id: comment.id })"
-          >
-            <Icon id="report-icon" name="ri:flag-line" />
-          </button>
-        </div>
-      </div>
-
-      <p class="deleted-comment" v-if="comment.deleted">
-        [deleted]
-      </p>
-      <MarkdownText
-        v-else-if="editingComment.id !== comment.id"
-        :markdown="comment.content"
-      />
-      <div class="textarea-container" v-else>
-        <textarea
-          name="comment-edit-field"
-          v-model="editingComment.content"
-          @keydown.escape="stopEditingComment()"
-          maxlength="500"
-        />
-
-        <div class="button-spacer">
-          <button @click="stopEditingComment()">
-            <Icon name="ri:close-fill" /> Cancel
-          </button>
-          <button @click="saveComment()">
-            <Icon name="ri:send-plane-fill" /> Save
-          </button>
-        </div>
-      </div>
-
-      <div id="timestamp" v-if="editingComment.id !== comment.id">
-        <span v-if="comment.edited && !comment.deleted">(edited)</span>
-        <span>{{ comment.timeSince }}</span>
-      </div>
-    </div>
+    <CommentNode
+      v-for="node in commentTree"
+      :key="node.id"
+      :comment="node"
+    />
   </div>
 
   <Dialog title="Comment History" v-model:open="historyOpen">
@@ -767,10 +779,45 @@ body.project-page main {
   border-radius: 1rem;
   padding: 1rem;
 
+  & .comment-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
   & #timestamp {
     display: flex;
-    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
     opacity: 0.5;
+  }
+
+  & .reply-link {
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--color-primary);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  & .replies {
+    margin-top: 1rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--color-secondary-background);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    & .comment {
+      padding-right: 0;
+    }
+  }
+
+  & .reply-box {
+    margin-top: 1rem;
   }
 
   & > .textarea-container > textarea {

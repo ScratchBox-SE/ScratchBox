@@ -47,5 +47,8 @@ export default defineEventHandler(async (event) => {
       eq(schema.projectComments.projectId, projectId),
       eq(schema.projectComments.originalId, originalId),
     ),
-  ).orderBy(asc(schema.projectComments.createdAt));
+  ).orderBy(
+    asc(schema.projectComments.createdAt),
+    asc(schema.projectComments.id),
+  );
 });
