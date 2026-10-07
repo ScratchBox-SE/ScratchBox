@@ -16,6 +16,7 @@ RUN bun install --frozen-lockfile
 
 COPY . .
 ENV NITRO_PRESET=bun
+ENV MOUNT=/data/sb-root
 RUN bun run build
 
 FROM ${BASE_IMAGE}
@@ -43,6 +44,7 @@ RUN chmod +x ./docker-entrypoint.sh
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=3000
+ENV MOUNT=/data/sb-root
 EXPOSE 3000
 
 ENTRYPOINT ["./docker-entrypoint.sh"]

@@ -12,19 +12,19 @@ The easiest way to run ScratchBox in production is with Docker.
 
 ## Environment variables
 
-| Variable              | Required | Description                                                                                                |
-| --------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
-| `JWT_SECRET`          | Yes      | Secret used to sign auth session tokens. You should preferably use a long random string.                   |
-| `AUTH_PROJECT_ID`     | Yes      | The Scratch project ID used for signing in.                                                                |
-| `AUTH_PROJECT_AUTHOR` | Yes      | The username that owns the authentication project above.                                                   |
-| `MOUNT`               | Yes      | Directory where uploaded project files/thumbnails and other data is stored. Should be a persistent volume. |
-| `DB_URL`              | No       | Path to the SQLite database file. Defaults to `sqlite.db`. Should be a persistent volume.                  |
-| `NODE_ENV`            | No       | Set to `production` when deployed (already set in the provided Dockerfile).                                |
-| `ENABLE_UNISTORE`     | No       | Set to `true` to turn on the Unistore integration. See [Unistore](#unistore-optional) below.               |
+| Variable              | Required              | Description                                                                                                                                                                                                    |
+| --------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `JWT_SECRET`          | Yes                   | Secret used to sign auth session tokens. You should preferably use a long random string.                                                                                                                       |
+| `AUTH_PROJECT_ID`     | Yes                   | The Scratch project ID used for signing in.                                                                                                                                                                    |
+| `AUTH_PROJECT_AUTHOR` | Yes                   | The username that owns the authentication project above.                                                                                                                                                       |
+| `DB_URL`              | No                    | Path to the SQLite database file. Defaults to `sqlite.db`. Should be a persistent volume.                                                                                                                      |
+| `MOUNT`               | Yes (non-Docker only) | Directory where uploaded project files/thumbnails are stored. Should be a persistent volume. **Not used by Docker** - it's already baked into the image as `/data/sb-root`; just mount your volume at `/data`. |
+| `NODE_ENV`            | No                    | Set to `production` when deployed (already set in the provided Dockerfile).                                                                                                                                    |
+| `ENABLE_UNISTORE`     | No                    | Set to `true` to turn on the Unistore integration. See [Unistore](#unistore-optional) below.                                                                                                                   |
 
 ## Using Docker Compose (recommended)
 
-1. Create a `.env` file in the project root with at least:
+1. Create a `.env` file next to `docker-compose.yml` with:
 
    ```
    JWT_SECRET=<a long random string>
@@ -45,17 +45,20 @@ The easiest way to run ScratchBox in production is with Docker.
 
 ## Using plain Docker
 
+`JWT_SECRET`/`AUTH_PROJECT_ID`/`AUTH_PROJECT_AUTHOR` need a `NITRO_` prefix here
+(`docker-compose.yml` already handles this for you, which is why the Compose
+section above doesn't mention it):
+
 ```
 docker build -t scratchbox .
 
 docker run -d \
   --name scratchbox \
   -p 3000:3000 \
-  -e JWT_SECRET=<a long random string> \
-  -e AUTH_PROJECT_ID=<your Scratch Auth project id> \
-  -e AUTH_PROJECT_AUTHOR=<the project's author username> \
+  -e NITRO_JWT_SECRET=<a long random string> \
+  -e NITRO_AUTH_PROJECT_ID=<your Scratch Auth project id> \
+  -e NITRO_AUTH_PROJECT_AUTHOR=<the project's author username> \
   -e DB_URL=/data/sqlite.db \
-  -e MOUNT=/data/sb-root \
   -v scratchbox-data:/data \
   scratchbox
 ```
@@ -125,19 +128,17 @@ docker build --build-arg BASE_IMAGE=devkitpro/devkitarm:latest -t scratchbox .
 docker run -d \
   --name scratchbox \
   -p 3000:3000 \
-  -e JWT_SECRET=<a long random string> \
-  -e AUTH_PROJECT_ID=<your Scratch Auth project id> \
-  -e AUTH_PROJECT_AUTHOR=<the project's author username> \
+  -e NITRO_JWT_SECRET=<a long random string> \
+  -e NITRO_AUTH_PROJECT_ID=<your Scratch Auth project id> \
+  -e NITRO_AUTH_PROJECT_AUTHOR=<the project's author username> \
   -e DB_URL=/data/sqlite.db \
-  -e MOUNT=/data/sb-root \
   -e ENABLE_UNISTORE=true \
   -v scratchbox-data:/data \
   scratchbox
 ```
 
 **With Docker Compose**, edit `docker-compose.yml` and uncomment both the
-`build.args.BASE_IMAGE` line and the `ENABLE_UNISTORE` environment line, so it
-looks like:
+`args`/`BASE_IMAGE` lines and the `ENABLE_UNISTORE` line, so it looks like:
 
 ```yaml
 services:

@@ -8,11 +8,10 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - JWT_SECRET=${JWT_SECRET}
-      - AUTH_PROJECT_ID=${AUTH_PROJECT_ID}
-      - AUTH_PROJECT_AUTHOR=${AUTH_PROJECT_AUTHOR}
+      - NITRO_JWT_SECRET=${JWT_SECRET}
+      - NITRO_AUTH_PROJECT_ID=${AUTH_PROJECT_ID}
+      - NITRO_AUTH_PROJECT_AUTHOR=${AUTH_PROJECT_AUTHOR}
       - DB_URL=/data/sqlite.db
-      - MOUNT=/data/sb-root
       # - ENABLE_UNISTORE=true # requires the BASE_IMAGE build arg above too
     volumes:
       - scratchbox-data:/data
