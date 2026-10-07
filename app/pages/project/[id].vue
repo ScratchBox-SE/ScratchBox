@@ -532,7 +532,7 @@ const openEditor = async () => {
           placeholder="Why are you editing this project?"
         />
       </div>
-      <p class="message error" v-if="editing && modEditError">
+      <p class="form-error" v-if="editing && modEditError">
         {{ modEditError }}
       </p>
       <iframe
@@ -749,7 +749,7 @@ const openEditor = async () => {
       <button :disabled="reportSubmitting" @click="submitReport">
         <Icon name="ri:flag-line" /> Submit Report
       </button>
-      <p class="message error" v-if="reportError">{{ reportError }}</p>
+      <p class="form-error" v-if="reportError">{{ reportError }}</p>
     </template>
   </Dialog>
 </template>
@@ -837,13 +837,11 @@ body.project-page main {
 }
 
 .history-version {
-  padding-bottom: 1rem;
-  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--color-secondary-background);
 
   &:last-child {
     border-bottom: none;
-    margin-bottom: 0;
     padding-bottom: 0;
   }
 
@@ -1020,7 +1018,8 @@ body.project-page main {
       & > textarea {
         background: none;
         width: 100%;
-        height: calc(100% - 6rem);
+        flex: 1;
+        min-height: 0;
         border: none;
         resize: none;
         color: inherit;
@@ -1029,13 +1028,15 @@ body.project-page main {
       }
 
       & > .mdtext {
-        height: 100%;
+        flex: 1;
+        min-height: 0;
         overflow: auto;
       }
 
       & > .options {
         display: flex;
         width: 100%;
+        flex-shrink: 0;
         justify-content: space-between;
 
         & div {
@@ -1124,12 +1125,10 @@ a.download {
   }
 }
 
-.message {
-  margin-top: 1rem;
+.form-error {
+  margin-bottom: 1rem;
   padding: 0.5rem;
   border-radius: 0.25rem;
-}
-.message.error {
   color: var(--color-error) !important;
   text-align: center;
   background-color: var(--color-error-background);

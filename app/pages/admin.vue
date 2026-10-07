@@ -169,7 +169,7 @@ const formatExpiryDate = computed(() => {
 });
 </script>
 <template>
-  <section class="container">
+  <section class="admin-container">
     <h1>Moderation Panel</h1>
 
     <section>
@@ -234,16 +234,6 @@ main {
   flex-direction: column;
   align-items: center;
 }
-button {
-  padding: 0.25rem;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 1rem;
-  background-color: var(--color-primary);
-  color: var(--color-primary-text);
-}
-
 .flex-row {
   display: flex;
   flex-direction: row;
@@ -251,7 +241,7 @@ button {
   gap: 0.5rem;
 }
 
-.container {
+.admin-container {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -323,17 +313,6 @@ button {
   }
 }
 
-.message {
-  margin-top: 1rem;
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-}
-.message.error {
-  color: var(--color-error) !important;
-  text-align: center;
-  background-color: var(--color-error-background);
-}
-
 #add-button {
   display: flex;
   flex-direction: row;
@@ -343,12 +322,13 @@ button {
   border: none;
   padding: 0.5rem;
   margin-top: 0.75rem;
+  background-color: var(--color-primary);
   color: var(--color-primary-text);
   cursor: pointer;
 }
 
 @media (max-width: 912px) {
-  .container {
+  .admin-container {
     padding: 0.5rem;
   }
 

@@ -139,10 +139,10 @@ const onRoleAssigned = async () => {
 };
 </script>
 <template>
-  <section class="container">
+  <section class="reports-container">
     <h1>Reports</h1>
 
-    <select v-model="statusFilter">
+    <select class="status-filter" v-model="statusFilter">
       <option value="open">Open</option>
       <option value="resolved">Resolved</option>
       <option value="dismissed">Dismissed</option>
@@ -258,7 +258,7 @@ main {
   align-items: center;
 }
 
-.container {
+.reports-container {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -267,7 +267,7 @@ main {
   max-width: 50rem;
 }
 
-select {
+.status-filter {
   align-self: flex-start;
   padding: 0.5rem;
   border-radius: 0.5rem;
