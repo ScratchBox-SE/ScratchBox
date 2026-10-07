@@ -64,7 +64,7 @@ dialog {
   padding: 1rem 1.125rem;
 
   & * {
-    color: var(--color-text) !important;
+    color: var(--color-text);
   }
 
   & > header {
