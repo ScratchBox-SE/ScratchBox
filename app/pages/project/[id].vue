@@ -708,9 +708,8 @@ const openEditor = async () => {
         class="history-version"
       >
         <div class="history-version-header">
-          <span class="history-timestamp">{{
-            new Date(version.createdAt).toLocaleString()
-          }}</span>
+          <span
+            class="history-timestamp">{{ new Date(version.createdAt).toLocaleString() }}</span>
           <span v-if="i === historyVersions.length - 1" class="badge current">
             Current
           </span>
@@ -732,9 +731,8 @@ const openEditor = async () => {
         class="history-version"
       >
         <div class="history-version-header">
-          <span class="history-timestamp">{{
-            new Date(entry.createdAt).toLocaleString()
-          }}</span>
+          <span
+            class="history-timestamp">{{ new Date(entry.createdAt).toLocaleString() }}</span>
         </div>
         <p>
           <NuxtLink

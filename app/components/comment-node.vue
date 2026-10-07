@@ -104,7 +104,8 @@ const ctx = inject<CommentContext>("commentContext")!;
       </div>
     </div>
 
-    <div class="comment-footer" v-if="ctx.editingComment.value.id !== comment.id">
+    <div class="comment-footer"
+      v-if="ctx.editingComment.value.id !== comment.id">
       <a
         v-if="ctx.user.loggedIn"
         href="javascript:void(0);"
