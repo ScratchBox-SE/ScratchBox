@@ -1,9 +1,17 @@
 import { db } from "../utils/drizzle";
 import * as schema from "../database/schema";
 import { and, count, eq, not } from "drizzle-orm";
+import { isUnistoreEnabled } from "../utils/tex3ds";
 import fs from "node:fs";
 
 export default defineEventHandler(async (event) => {
+  if (!isUnistoreEnabled()) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: "Unistore is not enabled on this server.",
+    });
+  }
+
   let i = 0;
 
   return {

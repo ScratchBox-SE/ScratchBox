@@ -1,0 +1,22 @@
+services:
+  scratchbox:
+    build:
+      context: .
+      # To bundle the Unistore integration's `tex3ds` binary, uncomment:
+      # args:
+      #   BASE_IMAGE: devkitpro/devkitarm:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - AUTH_PROJECT_ID=${AUTH_PROJECT_ID}
+      - AUTH_PROJECT_AUTHOR=${AUTH_PROJECT_AUTHOR}
+      - DB_URL=/data/sqlite.db
+      - MOUNT=/data/sb-root
+      # - ENABLE_UNISTORE=true # requires the BASE_IMAGE build arg above too
+    volumes:
+      - scratchbox-data:/data
+    restart: unless-stopped
+
+volumes:
+  scratchbox-data:

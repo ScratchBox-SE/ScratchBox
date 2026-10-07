@@ -24,4 +24,9 @@ export default defineNuxtConfig({
   routeRules: {
     "/": { redirect: "/explore" },
   },
+  nitro: {
+    externals: {
+      trace: false,
+    },
+  },
 });

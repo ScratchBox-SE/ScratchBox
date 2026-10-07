@@ -5,7 +5,19 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 import sharp from "sharp";
 
+export const isUnistoreEnabled = () => process.env.ENABLE_UNISTORE === "true";
+
 export const regenTex3DS = async () => {
+  if (!isUnistoreEnabled()) return;
+
+  try {
+    await regenTex3DSUnsafe();
+  } catch (e) {
+    console.error("Failed to regenerate Unistore texture atlas:", e);
+  }
+};
+
+export const regenTex3DSUnsafe = async () => {
   const projects = await db.select().from(schema.projects);
 
   const thumbnailPaths = await Promise.all(
