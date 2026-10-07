@@ -38,7 +38,7 @@ A WIP project hosting/distribution platform for Scratch Everywhere!
   - [x] Easy way to make people mods/admins
   - [ ] Allow mods to edit project info
     - [ ] Make them give a reason
-  - [ ] Allow viewing comment history
+  - [x] Allow viewing comment history
 - [x] TOS/Rules
 - [x] Filtered/sorted search
 - [x] Project Pages
@@ -49,10 +49,11 @@ A WIP project hosting/distribution platform for Scratch Everywhere!
 - [x] Improved Error Handling
 - [x] Editor
 - [x] Unistore
-- [x] Commenting
+- [ ] Commenting
   - [x] Create comments
   - [x] Edit comments
   - [x] Delete comments
+  - [ ] Replies
 
 ## Post-Testing
 

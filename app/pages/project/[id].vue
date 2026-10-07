@@ -94,6 +94,17 @@ const tags = reactive(
 
 const user = await useCurrentUser();
 
+let userRoles: string[] = [];
+if (user.loggedIn) {
+  try {
+    userRoles = await $fetch(`/api/user/${user.username}/roles`, {
+      headers: useRequestHeaders(["cookie"]),
+    }) ?? [];
+  } catch {}
+}
+const canModerate = userRoles.includes("admin") ||
+  userRoles.includes("moderator");
+
 const editing = ref(false);
 
 const projectUpload = useTemplateRef("projectUpload") as Ref<HTMLInputElement>;
@@ -254,6 +265,33 @@ const deleteComment = async (comment: { id: number }) => {
     if (editingComment.value.id === comment.id) {
       editingComment.value = { id: 0, content: "" };
     }
+  }
+};
+
+interface CommentVersion {
+  id: number;
+  originalId: number;
+  user: string;
+  content: string;
+  createdAt: string;
+  deleted: boolean;
+}
+
+const historyOpen = ref(false);
+const historyLoading = ref(false);
+const historyVersions = ref<CommentVersion[]>([]);
+
+const viewHistory = async (comment: { originalId: number }) => {
+  historyOpen.value = true;
+  historyLoading.value = true;
+  historyVersions.value = [];
+  try {
+    historyVersions.value = await $fetch<CommentVersion[]>(
+      `/api/project/${projectId}/comment/${comment.originalId}/history`,
+      { headers: useRequestHeaders(["cookie"]) },
+    );
+  } finally {
+    historyLoading.value = false;
   }
 };
 
@@ -423,20 +461,28 @@ const openEditor = async () => {
           {{ comment.user }}
         </NuxtLink>
 
-        <div
-          class="comment-actions"
-          v-if="
-            !comment.deleted &&
-            editingComment.id === 0 &&
-            comment.user === user.username
-          "
-        >
-          <button @click="editComment(comment)">
-            <Icon id="edit-icon" name="ri:pencil-fill" />
+        <div class="comment-actions">
+          <button
+            v-if="canModerate"
+            title="View history"
+            @click="viewHistory(comment)"
+          >
+            <Icon id="history-icon" name="ri:history-line" />
           </button>
-          <button @click="deleteComment(comment)">
-            <Icon id="delete-icon" name="ri:delete-bin-line" />
-          </button>
+          <template
+            v-if="
+              !comment.deleted &&
+              editingComment.id === 0 &&
+              comment.user === user.username
+            "
+          >
+            <button @click="editComment(comment)">
+              <Icon id="edit-icon" name="ri:pencil-fill" />
+            </button>
+            <button @click="deleteComment(comment)">
+              <Icon id="delete-icon" name="ri:delete-bin-line" />
+            </button>
+          </template>
         </div>
       </div>
 
@@ -471,6 +517,28 @@ const openEditor = async () => {
       </div>
     </div>
   </div>
+
+  <Dialog title="Comment History" v-model:open="historyOpen">
+    <p v-if="historyLoading">Loading...</p>
+    <template v-else>
+      <p v-if="historyVersions.length === 0">No history found.</p>
+      <div
+        v-for="(version, i) in historyVersions"
+        :key="version.id"
+        class="history-version"
+      >
+        <div class="history-version-header">
+          <span>{{ new Date(version.createdAt).toLocaleString() }}</span>
+          <span v-if="i === historyVersions.length - 1" class="badge current">
+            Current
+          </span>
+          <span v-if="version.deleted" class="badge deleted">Deleted</span>
+        </div>
+        <p v-if="version.deleted" class="deleted-comment">[deleted]</p>
+        <MarkdownText v-else :markdown="version.content" />
+      </div>
+    </template>
+  </Dialog>
 </template>
 <style>
 body.project-page main {
@@ -525,7 +593,8 @@ body.project-page main {
       border-radius: 100%;
 
       & #edit-icon,
-      & #delete-icon {
+      & #delete-icon,
+      & #history-icon {
         position: static;
         opacity: 1;
       }
@@ -550,6 +619,44 @@ body.project-page main {
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 0.75rem;
+  }
+}
+
+.history-version {
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--color-secondary-background);
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  & .history-version-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.7;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+
+  & .badge {
+    padding: 0.125rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: bold;
+
+    &.current {
+      background: var(--color-primary);
+      color: var(--color-primary-text);
+    }
+
+    &.deleted {
+      background: var(--color-error-background);
+      color: var(--color-error);
+    }
   }
 }
 
