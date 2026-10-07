@@ -49,6 +49,7 @@ export default defineEventHandler(async (event) => {
     lastUpdated: new Date(),
     private: true,
     user: (decoded as { username: string }).username,
+    fileType: "sb3",
   });
 
   return projectId;

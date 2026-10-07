@@ -109,11 +109,26 @@ export default defineEventHandler(async (event) => {
   }
 
   if (body.file) {
-    if (!body.file.name.endsWith(".sb3")) {
+    const extension = getProjectExtension(body.file.name);
+    if (!extension) {
       throw createError({
         statusCode: 415,
         statusMessage: "Invalid file type",
       });
+    }
+
+    validateProjectFile(
+      parseDataUrl(body.file.content).binaryString,
+      extension,
+    );
+
+    if (extension !== project.fileType) {
+      await deleteFile(`${projectId}.${project.fileType}`, "/projects").catch(
+        () => {},
+      );
+      await db.update(schema.projects).set({ fileType: extension }).where(
+        eq(schema.projects.id, projectId),
+      );
     }
 
     await storeFileLocally(body.file, projectId, "/projects");

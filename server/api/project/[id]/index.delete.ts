@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
     revision: (await db.select().from(schema.unistoreData))[0]!.revision + 1,
   });
 
-  await deleteFile(projectId + ".sb3", "/projects");
+  await deleteFile(`${projectId}.${project.fileType}`, "/projects");
   await db.delete(schema.projectLikes).where(
     eq(schema.projectLikes.projectId, projectId),
   );

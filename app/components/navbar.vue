@@ -209,7 +209,13 @@ onUnmounted(() => {
       />
       <button @click="createProject">Create</button>
     </Dialog>
-    <input type="file" hidden ref="upload" accept=".sb3" @input="onUpload" />
+    <input
+      type="file"
+      hidden
+      ref="upload"
+      accept=".sb3,.sb2,.sb"
+      @input="onUpload"
+    />
   </nav>
 </template>
 <style>

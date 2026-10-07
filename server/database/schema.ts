@@ -14,6 +14,7 @@ export const projects = sqliteTable("projects", {
   lastUpdated: integer("last_updated", { mode: "timestamp" }).notNull(),
   private: integer("private", { mode: "boolean" }).notNull(),
   user: text("user").notNull(),
+  fileType: text("file_type").default("sb3").notNull(),
 });
 
 export const projectLikes = sqliteTable("project_likes", {

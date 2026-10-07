@@ -7,8 +7,19 @@ export default defineEventHandler(async (event) => {
   const projectId = getRouterParam(event, "id") as string;
 
   try {
+    const project = (await db.select().from(schema.projects).where(
+      eq(schema.projects.id, projectId),
+    ))[0];
+
+    if (!project) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: "Project not found.",
+      });
+    }
+
     const filePath = getFileLocally(
-      projectId + ".sb3",
+      `${projectId}.${project.fileType}`,
       "/projects",
     );
 
@@ -22,11 +33,7 @@ export default defineEventHandler(async (event) => {
     setHeader(
       event,
       "Content-Disposition",
-      `attachment; filename="${
-        (await db.select().from(schema.projects).where(
-          eq(schema.projects.id, projectId),
-        ))[0].name
-      }.sb3"`,
+      `attachment; filename="${project.name}.${project.fileType}"`,
     );
 
     setHeader(event, "Access-Control-Allow-Origin", "*");

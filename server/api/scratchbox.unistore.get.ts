@@ -64,12 +64,13 @@ export default defineEventHandler(async (event) => {
               .get()?.count,
           },
         };
-        content[`Download ${project.name}.sb3`] = [{
+        content[`Download ${project.name}.${project.fileType}`] = [{
           type: "downloadFile",
           file: `https://${
             getRequestHost(event)
           }/api/project/${project.id}/download`,
-          output: `sdmc:/3ds/scratch-everywhere/${project.name}.sb3`,
+          output:
+            `sdmc:/3ds/scratch-everywhere/${project.name}.${project.fileType}`,
         }];
 
         if (hasThumbnail) i++;

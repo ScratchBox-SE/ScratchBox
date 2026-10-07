@@ -376,7 +376,7 @@ const openEditor = async () => {
               type="file"
               hidden
               ref="projectUpload"
-              accept=".sb3"
+              accept=".sb3,.sb2,.sb"
               @input="handleProjectFileInput"
             />
             <button class="thumbnail-upload" @click="thumbnailUpload.click()">
