@@ -57,8 +57,8 @@ if (user.loggedIn) {
   } catch {}
 }
 
-const canModerate = userRoles.includes("admin") ||
-  userRoles.includes("moderator");
+const canModerate = (userRoles.includes("admin") ||
+  userRoles.includes("moderator")) && !userRoles.includes("banned");
 
 const isDropdownOpen = ref(false);
 const dropdownRef = useTemplateRef("dropdownRef");

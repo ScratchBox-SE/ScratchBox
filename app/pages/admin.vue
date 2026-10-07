@@ -17,7 +17,10 @@ if (user.loggedIn) {
   });
 }
 
-if (!userRoles.includes("admin") && !userRoles.includes("moderator")) {
+if (
+  (!userRoles.includes("admin") && !userRoles.includes("moderator")) ||
+  userRoles.includes("banned")
+) {
   throw createError({
     statusCode: 403,
     statusMessage: "Forbidden",

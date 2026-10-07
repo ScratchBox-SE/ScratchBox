@@ -60,6 +60,9 @@ export const assertCanModerate = async (user: string) => {
       statusMessage: "Forbidden",
     });
   }
+
+  await assertNotBanned(user);
+
   return roles;
 };
 
