@@ -105,7 +105,41 @@ if (user.loggedIn) {
 const canModerate = userRoles.includes("admin") ||
   userRoles.includes("moderator");
 
+const isOwner = computed(() =>
+  user.loggedIn && user.username === project.value?.user
+);
+const canModEdit = computed(() => canModerate && !isOwner.value);
+
 const editing = ref(false);
+const modEditReason = ref("");
+const modEditError = ref("");
+
+const resetEditableFields = () => {
+  name.value = project.value?.name ?? "";
+  description.value = project.value?.description ?? "";
+  tags.splice(
+    0,
+    tags.length,
+    ...(project.value?.tags ?? []).toSorted(
+      (a, b) =>
+        Object.keys(tagsMap).indexOf(a) - Object.keys(tagsMap).indexOf(b),
+    ),
+  );
+  isPrivate.value = project.value?.private ?? true;
+};
+
+const startModEdit = () => {
+  editing.value = true;
+  modEditReason.value = "";
+  modEditError.value = "";
+};
+
+const cancelModEdit = () => {
+  editing.value = false;
+  modEditReason.value = "";
+  modEditError.value = "";
+  resetEditableFields();
+};
 
 const projectUpload = useTemplateRef("projectUpload") as Ref<HTMLInputElement>;
 const { handleFileInput: handleProjectFileInput, files: projectFiles } =
@@ -213,19 +247,32 @@ const deleteProject = async () => {
 };
 
 const save = async () => {
-  await $fetch(`/api/project/${projectId}/edit`, {
-    method: "POST",
-    headers: useRequestHeaders(["cookie"]),
-    body: {
-      file: projectFiles.value[0],
-      thumbnail: thumbnailFiles.value[0],
-      name: name.value,
-      description: description.value,
-      tags: tags,
-      private: isPrivate.value,
-    },
-  });
-  editing.value = false;
+  if (canModEdit.value && !modEditReason.value.trim()) {
+    modEditError.value = "Please enter a reason";
+    return;
+  }
+
+  try {
+    await $fetch(`/api/project/${projectId}/edit`, {
+      method: "POST",
+      headers: useRequestHeaders(["cookie"]),
+      body: {
+        file: projectFiles.value[0],
+        thumbnail: thumbnailFiles.value[0],
+        name: name.value,
+        description: description.value,
+        tags: tags,
+        private: isPrivate.value,
+        reason: canModEdit.value ? modEditReason.value : undefined,
+      },
+    });
+    editing.value = false;
+    modEditReason.value = "";
+    modEditError.value = "";
+  } catch (e) {
+    modEditError.value = (e as { data?: { statusMessage?: string } })?.data
+      ?.statusMessage ?? "Failed to save";
+  }
 };
 
 const comment = async () => {
@@ -344,6 +391,30 @@ const viewHistory = async (comment: { originalId: number }) => {
   }
 };
 
+interface EditLogEntry {
+  editedBy: string;
+  reason: string | null;
+  createdAt: string;
+}
+
+const editLogOpen = ref(false);
+const editLogLoading = ref(false);
+const editLog = ref<EditLogEntry[]>([]);
+
+const viewEditLog = async () => {
+  editLogOpen.value = true;
+  editLogLoading.value = true;
+  editLog.value = [];
+  try {
+    editLog.value = await $fetch<EditLogEntry[]>(
+      `/api/project/${projectId}/edit-log`,
+      { headers: useRequestHeaders(["cookie"]) },
+    );
+  } finally {
+    editLogLoading.value = false;
+  }
+};
+
 onMounted(() => {
   resizeNameInput();
 });
@@ -413,7 +484,13 @@ const openEditor = async () => {
           <button @click="openEditor" v-if="!editing">
             <Icon name="ri:edit-line" /> Editor
           </button>
-          <template v-if="user.loggedIn && user.username == project?.user">
+          <button
+            v-if="isOwner || canModerate"
+            @click="viewEditLog"
+          >
+            <Icon name="ri:history-line" /> Edit History
+          </button>
+          <template v-if="isOwner">
             <button @click="editing = true" v-if="!editing">
               <Icon name="ri:settings-4-line" /> Settings
             </button>
@@ -421,6 +498,17 @@ const openEditor = async () => {
               <button @click="isPrivate = !isPrivate">
                 <Icon name="ri:user-line" />
                 {{ isPrivate ? "Make Public" : "Make Private" }}
+              </button>
+              <button @click="save"><Icon name="ri:save-line" /> Save</button>
+            </template>
+          </template>
+          <template v-else-if="canModEdit">
+            <button @click="startModEdit" v-if="!editing">
+              <Icon name="ri:edit-2-line" /> Edit (Mod)
+            </button>
+            <template v-else>
+              <button @click="cancelModEdit">
+                <Icon name="ri:close-line" /> Cancel
               </button>
               <button @click="save"><Icon name="ri:save-line" /> Save</button>
             </template>
@@ -433,6 +521,20 @@ const openEditor = async () => {
           </button>
         </div>
       </div>
+      <div v-if="canModEdit && editing" class="mod-edit-reason">
+        <label for="modEditReason">
+          Reason for editing <span class="required">*</span>
+        </label>
+        <input
+          id="modEditReason"
+          type="text"
+          v-model="modEditReason"
+          placeholder="Why are you editing this project?"
+        />
+      </div>
+      <p class="message error" v-if="editing && modEditError">
+        {{ modEditError }}
+      </p>
       <iframe
         :src="`https://scratcheverywhere.github.io/ScratchEverywhere/?project_url=${useRequestURL().host}/api/project/${projectId}/download`"
         allowtransparency="true"
@@ -461,7 +563,7 @@ const openEditor = async () => {
             <Icon name="ri:download-line" />
             Download
           </a>
-          <div v-if="editing">
+          <div v-if="editing && isOwner">
             <button class="upload" @click="projectUpload.click()">
               <Icon name="ri:upload-line" /> Upload
             </button>
@@ -606,6 +708,27 @@ const openEditor = async () => {
     </template>
   </Dialog>
 
+  <Dialog title="Edit History" v-model:open="editLogOpen">
+    <p v-if="editLogLoading">Loading...</p>
+    <template v-else>
+      <p v-if="editLog.length === 0">No edits yet.</p>
+      <div
+        v-for="(entry, i) in editLog"
+        :key="i"
+        class="history-version"
+      >
+        <div class="history-version-header">
+          <span>{{ new Date(entry.createdAt).toLocaleString() }}</span>
+        </div>
+        <p>
+          <NuxtLink
+            :to="`/user/${entry.editedBy}`">{{ entry.editedBy }}</NuxtLink>
+          <template v-if="entry.reason">: {{ entry.reason }}</template>
+        </p>
+      </div>
+    </template>
+  </Dialog>
+
   <Dialog
     :title="reportTarget?.type === 'comment' ? 'Report Comment' : 'Report Project'"
     v-model:open="reportDialogOpen"
@@ -632,7 +755,7 @@ const openEditor = async () => {
 </template>
 <style>
 body.project-page main {
-  max-width: 1024px;
+  min-width: 1024px;
   display: flex;
   align-items: center;
   flex-direction: column;
@@ -984,6 +1107,21 @@ a.download {
 
 .required {
   color: var(--color-error) !important;
+}
+
+.mod-edit-reason {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+
+  & input {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    border: none;
+    background-color: var(--color-secondary-background);
+    color: var(--color-text);
+  }
 }
 
 .message {

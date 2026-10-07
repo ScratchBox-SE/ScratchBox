@@ -70,6 +70,16 @@ export const reports = sqliteTable("reports", {
   resolvedBy: text("resolved_by"),
 });
 
+export const projectEditLog = sqliteTable("project_edit_log", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  projectId: text("project_id").notNull().references(() => projects.id),
+  editedBy: text("edited_by").notNull(),
+  reason: text("reason"),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(
+    sql`(strftime('%s', 'now'))`,
+  ).notNull(),
+});
+
 export const userRoles = sqliteTable("user_roles", {
   user: text("user").notNull(),
   role: text("role").notNull(),

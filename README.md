@@ -30,14 +30,14 @@ A WIP project hosting/distribution platform for Scratch Everywhere!
 ## Testing
 
 - [x] Actually check if the file is a Scratch project.
-- [ ] Moderation
+- [x] Moderation
   - [x] Reports
     - [x] Comments
     - [x] Projects
   - [x] Admin/Mod dashboard
   - [x] Easy way to make people mods/admins
-  - [ ] Allow mods to edit project info
-    - [ ] Make them give a reason
+  - [x] Allow mods to edit project info
+    - [x] Make them give a reason
   - [x] Allow viewing comment history
 - [x] TOS/Rules
 - [x] Filtered/sorted search
