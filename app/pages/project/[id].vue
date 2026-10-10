@@ -1,12 +1,4 @@
 <script setup lang="ts">
-const tagsMap = {
-  "dual-screen": "Dual Screen",
-  "cursor": "Cursor",
-  "heavy": "Heavy",
-  "light": "Light",
-  "balanced": "Balanced",
-} as const;
-
 const projectId = useRoute().params.id;
 
 const { data: fetchedProject, error: fetchError } = await useFetch<{
@@ -16,15 +8,19 @@ const { data: fetchedProject, error: fetchError } = await useFetch<{
   createdAt: string;
   private: boolean;
   user: string;
+  userPicture: string;
   likes: number;
   tags: (keyof typeof tagsMap)[];
   comments: {
     id: number;
     originalId: number;
+    parentId: number | null;
     user: string;
+    userPicture: string;
     createdAt: string;
     content: string;
     edited: boolean;
+    deleted: boolean;
   }[];
 }>(`/api/project/${projectId}`);
 
@@ -35,38 +31,59 @@ if (fetchError.value) {
 const project = ref() as typeof fetchedProject;
 watch(fetchedProject, (val) => (project.value = val), { immediate: true });
 
-const sortedComments = computed(() => {
-  if (!project.value || !project.value.comments) return [];
+interface CommentNodeData {
+  id: number;
+  originalId: number;
+  parentId: number | null;
+  user: string;
+  userPicture: string;
+  createdAt: string;
+  content: string;
+  edited: boolean;
+  deleted: boolean;
+  timeSince: string;
+  replies: CommentNodeData[];
+}
 
-  return project.value.comments
-    .toSorted(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    )
-    .map((comment) => ({
-      ...comment,
-      timeSince: useFormatedTime(new Date(comment.createdAt)) + " ago",
-    }));
-});
-const commentProfiles = ref<string[]>([]);
-watch(
-  sortedComments,
-  async () => {
-    if (sortedComments.value.length === 0) {
-      commentProfiles.value = [];
-      return;
+const commentTree = computed<CommentNodeData[]>(() => {
+  if (!project.value?.comments) return [];
+
+  const byOriginalId = new Map<number, CommentNodeData>();
+  for (const c of project.value.comments) {
+    byOriginalId.set(c.originalId, {
+      ...c,
+      timeSince: useFormatedTime(new Date(c.createdAt)),
+      replies: [],
+    });
+  }
+
+  const roots: CommentNodeData[] = [];
+  for (const node of byOriginalId.values()) {
+    const parent = node.parentId != null
+      ? byOriginalId.get(node.parentId)
+      : undefined;
+    if (parent) {
+      parent.replies.push(node);
+    } else {
+      roots.push(node);
     }
+  }
 
-    commentProfiles.value = (await Promise.all(
-      sortedComments.value.map(
-        (comment) => getProfilePicture(comment.user).catch(() => null), // handle errors per request
-      ),
-    )) as string[];
-  },
-  { immediate: true },
-);
+  const sortChildren = (node: CommentNodeData) => {
+    node.replies.sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+    node.replies.forEach(sortChildren);
+  };
+  roots.forEach(sortChildren);
 
-const profilePicture = await getProfilePicture(project.value?.user);
+  roots.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+  return roots;
+});
+
 const { data: liked } = await useFetch<boolean>(
   `/api/project/${projectId}/liked`,
   {
@@ -117,7 +134,52 @@ const tags = reactive(
 
 const user = await useCurrentUser();
 
+let userRoles: string[] = [];
+if (user.loggedIn) {
+  try {
+    userRoles = await $fetch(`/api/user/${user.username}/roles`, {
+      headers: useRequestHeaders(["cookie"]),
+    }) ?? [];
+  } catch {}
+}
+const canModerate = userRoles.includes("admin") ||
+  userRoles.includes("moderator");
+
+const isOwner = computed(() =>
+  user.loggedIn && user.username === project.value?.user
+);
+const canModEdit = computed(() => canModerate && !isOwner.value);
+
 const editing = ref(false);
+const modEditReason = ref("");
+const modEditError = ref("");
+
+const resetEditableFields = () => {
+  name.value = project.value?.name ?? "";
+  description.value = project.value?.description ?? "";
+  tags.splice(
+    0,
+    tags.length,
+    ...(project.value?.tags ?? []).toSorted(
+      (a, b) =>
+        Object.keys(tagsMap).indexOf(a) - Object.keys(tagsMap).indexOf(b),
+    ),
+  );
+  isPrivate.value = project.value?.private ?? true;
+};
+
+const startModEdit = () => {
+  editing.value = true;
+  modEditReason.value = "";
+  modEditError.value = "";
+};
+
+const cancelModEdit = () => {
+  editing.value = false;
+  modEditReason.value = "";
+  modEditError.value = "";
+  resetEditableFields();
+};
 
 const projectUpload = useTemplateRef("projectUpload") as Ref<HTMLInputElement>;
 const { handleFileInput: handleProjectFileInput, files: projectFiles } =
@@ -143,6 +205,55 @@ const onLike = async () => {
 
   project.value!.likes += liked.value ? -1 : 1;
   liked.value = !liked.value;
+};
+
+type ReportTarget = { type: "project" } | { type: "comment"; id: number };
+
+const reportDialogOpen = ref(false);
+const reportTarget = ref<ReportTarget | null>(null);
+const reportReason = ref("");
+const reportError = ref("");
+const reportSubmitting = ref(false);
+const reportSubmitted = ref(false);
+
+const openReportDialog = (target: ReportTarget) => {
+  reportTarget.value = target;
+  reportReason.value = "";
+  reportError.value = "";
+  reportSubmitted.value = false;
+  reportDialogOpen.value = true;
+};
+
+const submitReport = async () => {
+  if (!reportReason.value.trim()) {
+    reportError.value = "Please enter a reason";
+    return;
+  }
+
+  reportSubmitting.value = true;
+  reportError.value = "";
+
+  try {
+    if (reportTarget.value?.type === "comment") {
+      await $fetch(`/api/project/${projectId}/comment/report`, {
+        method: "POST",
+        headers: useRequestHeaders(["cookie"]),
+        body: { id: reportTarget.value.id, reason: reportReason.value },
+      });
+    } else {
+      await $fetch(`/api/project/${projectId}/report`, {
+        method: "POST",
+        headers: useRequestHeaders(["cookie"]),
+        body: { reason: reportReason.value },
+      });
+    }
+    reportSubmitted.value = true;
+  } catch (e) {
+    reportError.value = (e as { data?: { statusMessage?: string } })?.data
+      ?.statusMessage ?? "Failed to submit report";
+  } finally {
+    reportSubmitting.value = false;
+  }
 };
 
 const nameInput = useTemplateRef("nameInput") as Ref<HTMLTextAreaElement>;
@@ -176,39 +287,77 @@ const deleteProject = async () => {
 };
 
 const save = async () => {
-  await $fetch(`/api/project/${projectId}/edit`, {
-    method: "POST",
-    headers: useRequestHeaders(["cookie"]),
-    body: {
-      file: projectFiles.value[0],
-      thumbnail: thumbnailFiles.value[0],
-      name: name.value,
-      description: description.value,
-      tags: tags,
-      private: isPrivate.value,
-    },
-  });
-  editing.value = false;
+  if (canModEdit.value && !modEditReason.value.trim()) {
+    modEditError.value = "Please enter a reason";
+    return;
+  }
+
+  try {
+    await $fetch(`/api/project/${projectId}/edit`, {
+      method: "POST",
+      headers: useRequestHeaders(["cookie"]),
+      body: {
+        file: projectFiles.value[0],
+        thumbnail: thumbnailFiles.value[0],
+        name: name.value,
+        description: description.value,
+        tags: tags,
+        private: isPrivate.value,
+        reason: canModEdit.value ? modEditReason.value : undefined,
+      },
+    });
+    editing.value = false;
+    modEditReason.value = "";
+    modEditError.value = "";
+  } catch (e) {
+    modEditError.value = (e as { data?: { statusMessage?: string } })?.data
+      ?.statusMessage ?? "Failed to save";
+  }
 };
 
-const comment = async () => {
+const postComment = async (content: string, parentId: number | null) => {
   const commentId = await $fetch(`/api/project/${projectId}/comment`, {
     method: "POST",
     headers: useRequestHeaders(["cookie"]),
-    body: commentContent.value,
+    body: { content, parentId },
   });
   project.value!.comments = [
     ...project.value!.comments,
     {
       id: commentId,
       originalId: commentId,
+      parentId,
       user: user.username,
+      userPicture: await getProfilePicture(user.username) as string,
       createdAt: new Date().toString(),
-      content: commentContent.value,
+      content,
       edited: false,
+      deleted: false,
     },
   ];
+};
+
+const comment = async () => {
+  if (!commentContent.value.trim()) return;
+  await postComment(commentContent.value, null);
   commentContent.value = "";
+};
+
+const replyingTo = ref<number | null>(null);
+const replyContent = ref("");
+
+const startReply = (originalId: number) => {
+  replyingTo.value = originalId;
+  replyContent.value = "";
+};
+const cancelReply = () => {
+  replyingTo.value = null;
+  replyContent.value = "";
+};
+const submitReply = async () => {
+  if (!replyContent.value.trim() || replyingTo.value == null) return;
+  await postComment(replyContent.value, replyingTo.value);
+  cancelReply();
 };
 
 // Int that points to the comment ID you're editing (and zero represents not editing)
@@ -253,13 +402,106 @@ const saveComment = async () => {
   }
 };
 
+const deleteComment = async (comment: { id: number }) => {
+  if (!confirm("Delete this comment? This can't be undone.")) return;
+
+  const res = await $fetch(`/api/project/${projectId}/comment`, {
+    method: "DELETE",
+    headers: useRequestHeaders(["cookie"]),
+    body: { id: comment.id },
+  });
+
+  // using this as an OK response check for now
+  if (typeof res === "number") {
+    const original = project.value!.comments.find(
+      (c) => c.id === comment.id,
+    );
+    if (original) {
+      original.content = "";
+      original.deleted = true;
+      original.id = res;
+    }
+    if (editingComment.value.id === comment.id) {
+      editingComment.value = { id: 0, content: "" };
+    }
+  }
+};
+
+interface CommentVersion {
+  id: number;
+  originalId: number;
+  user: string;
+  content: string;
+  createdAt: string;
+  deleted: boolean;
+}
+
+const historyOpen = ref(false);
+const historyLoading = ref(false);
+const historyVersions = ref<CommentVersion[]>([]);
+
+const viewHistory = async (comment: { originalId: number }) => {
+  historyOpen.value = true;
+  historyLoading.value = true;
+  historyVersions.value = [];
+  try {
+    historyVersions.value = await $fetch<CommentVersion[]>(
+      `/api/project/${projectId}/comment/${comment.originalId}/history`,
+      { headers: useRequestHeaders(["cookie"]) },
+    );
+  } finally {
+    historyLoading.value = false;
+  }
+};
+
+interface EditLogEntry {
+  editedBy: string;
+  reason: string | null;
+  createdAt: string;
+}
+
+const editLogOpen = ref(false);
+const editLogLoading = ref(false);
+const editLog = ref<EditLogEntry[]>([]);
+
+const viewEditLog = async () => {
+  editLogOpen.value = true;
+  editLogLoading.value = true;
+  editLog.value = [];
+  try {
+    editLog.value = await $fetch<EditLogEntry[]>(
+      `/api/project/${projectId}/edit-log`,
+      { headers: useRequestHeaders(["cookie"]) },
+    );
+  } finally {
+    editLogLoading.value = false;
+  }
+};
+
+provide("commentContext", {
+  user,
+  canModerate,
+  editingComment,
+  editComment,
+  stopEditingComment,
+  saveComment,
+  deleteComment,
+  viewHistory,
+  openReportDialog,
+  replyingTo,
+  replyContent,
+  startReply,
+  cancelReply,
+  submitReply,
+});
+
 onMounted(() => {
   resizeNameInput();
 });
 
-var thumbnail = `/api/project/${projectId}/thumbnail`;
+let thumbnail = `/api/project/${projectId}/thumbnail`;
 try {
-  const { _ } = await $fetch(thumbnail);
+  await $fetch(thumbnail);
 } catch {
   thumbnail = "/default-thumbnail.png";
 }
@@ -304,27 +546,31 @@ const openEditor = async () => {
         rows="1"
       />
       <div class="tags" v-if="tags.length > 0 || editing">
-        <p
+        <TagPill
           v-for="(name, tag) in tagsMap"
           v-show="tags.includes(tag) || editing"
-        >
-          {{ name }}
-          <Icon
-            v-if="editing"
-            :name='tags.includes(tag) ? "ri:close-line" : "ri:add-line"'
-            @click="addOrRemoveTag(tag)"
-          />
-        </p>
+          :key="tag"
+          :label="name"
+          :selected="tags.includes(tag)"
+          :interactive="editing"
+          @toggle="addOrRemoveTag(tag)"
+        />
       </div>
       <div>
-        <img :src="profilePicture as string" /> By
+        <img :src="project?.userPicture" /> By
         <NuxtLink :to="`/user/${project?.user}`">{{ project?.user }}</NuxtLink>
 
         <div class="options-right">
           <button @click="openEditor" v-if="!editing">
             <Icon name="ri:edit-line" /> Editor
           </button>
-          <template v-if="user.loggedIn && user.username == project?.user">
+          <button
+            v-if="isOwner || canModerate"
+            @click="viewEditLog"
+          >
+            <Icon name="ri:history-line" /> Edit History
+          </button>
+          <template v-if="isOwner">
             <button @click="editing = true" v-if="!editing">
               <Icon name="ri:settings-4-line" /> Settings
             </button>
@@ -336,8 +582,39 @@ const openEditor = async () => {
               <button @click="save"><Icon name="ri:save-line" /> Save</button>
             </template>
           </template>
+          <template v-else-if="canModEdit">
+            <button @click="startModEdit" v-if="!editing">
+              <Icon name="ri:edit-2-line" /> Edit (Mod)
+            </button>
+            <template v-else>
+              <button @click="cancelModEdit">
+                <Icon name="ri:close-line" /> Cancel
+              </button>
+              <button @click="save"><Icon name="ri:save-line" /> Save</button>
+            </template>
+          </template>
+          <button
+            v-else-if="user.loggedIn && !editing"
+            @click="openReportDialog({ type: 'project' })"
+          >
+            <Icon name="ri:flag-line" /> Report
+          </button>
         </div>
       </div>
+      <div v-if="canModEdit && editing" class="mod-edit-reason">
+        <label for="modEditReason">
+          Reason for editing <span class="required">*</span>
+        </label>
+        <input
+          id="modEditReason"
+          type="text"
+          v-model="modEditReason"
+          placeholder="Why are you editing this project?"
+        />
+      </div>
+      <p class="form-error" v-if="editing && modEditError">
+        {{ modEditError }}
+      </p>
       <iframe
         :src="`https://scratcheverywhere.github.io/ScratchEverywhere/?project_url=${useRequestURL().host}/api/project/${projectId}/download`"
         allowtransparency="true"
@@ -374,7 +651,7 @@ const openEditor = async () => {
               Download
             </a>
           </div>
-          <div v-else>
+          <div v-if="editing && isOwner">
             <button class="upload" @click="projectUpload.click()">
               <Icon name="ri:upload-line" /> Upload
             </button>
@@ -382,7 +659,7 @@ const openEditor = async () => {
               type="file"
               hidden
               ref="projectUpload"
-              accept=".sb3"
+              accept=".sb3,.sb2,.sb"
               @input="handleProjectFileInput"
             />
             <button class="thumbnail-upload" @click="thumbnailUpload.click()">
@@ -422,53 +699,85 @@ const openEditor = async () => {
       </div>
     </div>
 
-    <div class="comment" v-for="(comment, i) in sortedComments">
-      <div class="comment-header">
-        <NuxtLink class="comment-profile" :to="`/user/${comment.user}`">
-          <img :src="commentProfiles[i]" />
-          {{ comment.user }}
-        </NuxtLink>
-
-        <button
-          v-if="editingComment.id === 0 && comment.user === user.username"
-          @click="editComment(comment)"
-        >
-          <Icon id="edit-icon" name="ri:pencil-fill" />
-        </button>
-      </div>
-
-      <MarkdownText
-        v-if="editingComment.id !== comment.id"
-        :markdown="comment.content"
-      />
-      <div class="textarea-container" v-else>
-        <textarea
-          name="comment-edit-field"
-          v-model="editingComment.content"
-          @keydown.escape="stopEditingComment()"
-          maxlength="500"
-        />
-
-        <div class="button-spacer">
-          <button @click="stopEditingComment()">
-            <Icon name="ri:close-fill" /> Cancel
-          </button>
-          <button @click="saveComment()">
-            <Icon name="ri:send-plane-fill" /> Save
-          </button>
-        </div>
-      </div>
-
-      <div id="timestamp" v-if="editingComment.id !== comment.id">
-        <span v-if="comment.edited">(edited)</span>
-        <span>{{ comment.timeSince }}</span>
-      </div>
-    </div>
+    <CommentNode
+      v-for="node in commentTree"
+      :key="node.id"
+      :comment="node"
+    />
   </div>
+
+  <Dialog title="Comment History" v-model:open="historyOpen">
+    <p v-if="historyLoading">Loading...</p>
+    <template v-else>
+      <p v-if="historyVersions.length === 0">No history found.</p>
+      <div
+        v-for="(version, i) in historyVersions"
+        :key="version.id"
+        class="history-version"
+      >
+        <div class="history-version-header">
+          <span
+            class="history-timestamp">{{ new Date(version.createdAt).toLocaleString() }}</span>
+          <span v-if="i === historyVersions.length - 1" class="badge current">
+            Current
+          </span>
+          <span v-if="version.deleted" class="badge deleted">Deleted</span>
+        </div>
+        <p v-if="version.deleted" class="deleted-comment">[deleted]</p>
+        <MarkdownText v-else :markdown="version.content" />
+      </div>
+    </template>
+  </Dialog>
+
+  <Dialog title="Edit History" v-model:open="editLogOpen">
+    <p v-if="editLogLoading">Loading...</p>
+    <template v-else>
+      <p v-if="editLog.length === 0">No edits yet.</p>
+      <div
+        v-for="(entry, i) in editLog"
+        :key="i"
+        class="history-version"
+      >
+        <div class="history-version-header">
+          <span
+            class="history-timestamp">{{ new Date(entry.createdAt).toLocaleString() }}</span>
+        </div>
+        <p>
+          <NuxtLink
+            :to="`/user/${entry.editedBy}`">{{ entry.editedBy }}</NuxtLink>
+          <template v-if="entry.reason">: {{ entry.reason }}</template>
+        </p>
+      </div>
+    </template>
+  </Dialog>
+
+  <Dialog
+    :title="reportTarget?.type === 'comment' ? 'Report Comment' : 'Report Project'"
+    v-model:open="reportDialogOpen"
+  >
+    <template v-if="reportSubmitted">
+      <p>Thanks, your report has been submitted for review.</p>
+      <button @click="reportDialogOpen = false">Close</button>
+    </template>
+    <template v-else>
+      <label for="reportReason">Reason <span class="required">*</span></label>
+      <input
+        id="reportReason"
+        type="text"
+        v-model="reportReason"
+        maxlength="500"
+        placeholder="Why are you reporting this?"
+      />
+      <button :disabled="reportSubmitting" @click="submitReport">
+        <Icon name="ri:flag-line" /> Submit Report
+      </button>
+      <p class="form-error" v-if="reportError">{{ reportError }}</p>
+    </template>
+  </Dialog>
 </template>
 <style>
 body.project-page main {
-  max-width: 1024px;
+  min-width: 1024px;
   display: flex;
   align-items: center;
   flex-direction: column;
@@ -480,10 +789,45 @@ body.project-page main {
   border-radius: 1rem;
   padding: 1rem;
 
+  & .comment-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
   & #timestamp {
     display: flex;
-    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
     opacity: 0.5;
+  }
+
+  & .reply-link {
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--color-primary);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  & .replies {
+    margin-top: 1rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--color-secondary-background);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    & .comment {
+      padding-right: 0;
+    }
+  }
+
+  & .reply-box {
+    margin-top: 1rem;
   }
 
   & > .textarea-container > textarea {
@@ -503,6 +847,11 @@ body.project-page main {
     width: 100%;
     margin-bottom: 1rem;
 
+    & .comment-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
     & button {
       border: none;
       padding: 0.5rem;
@@ -513,11 +862,19 @@ body.project-page main {
       position: static;
       border-radius: 100%;
 
-      & #edit-icon {
+      & #edit-icon,
+      & #delete-icon,
+      & #history-icon,
+      & #report-icon {
         position: static;
         opacity: 1;
       }
     }
+  }
+
+  & .deleted-comment {
+    opacity: 0.6;
+    font-style: italic;
   }
 
   & .comment-profile {
@@ -533,6 +890,45 @@ body.project-page main {
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 0.75rem;
+  }
+}
+
+.history-version {
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-secondary-background);
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  & .history-version-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+
+    & .history-timestamp {
+      opacity: 0.7;
+    }
+  }
+
+  & .badge {
+    padding: 0.125rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: bold;
+
+    &.current {
+      background: var(--color-primary);
+      color: var(--color-primary-text);
+    }
+
+    &.deleted {
+      background: var(--color-error-background);
+      color: var(--color-error);
+    }
   }
 }
 
@@ -606,19 +1002,6 @@ body.project-page main {
       gap: 0.5rem;
       flex-wrap: wrap;
       margin-bottom: 1rem;
-
-      & p {
-        background: var(--color-secondary-background);
-        padding: 0.5rem 1rem;
-        border-radius: 2rem;
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-
-        & span {
-          cursor: pointer;
-        }
-      }
     }
 
     & > object,
@@ -695,7 +1078,8 @@ body.project-page main {
       & > textarea {
         background: none;
         width: 100%;
-        height: 100%;
+        flex: 1;
+        min-height: 0;
         border: none;
         resize: none;
         color: inherit;
@@ -704,13 +1088,15 @@ body.project-page main {
       }
 
       & > .mdtext {
-        height: 100%;
+        flex: 1;
+        min-height: 0;
         overflow: auto;
       }
 
       & > .options {
         display: flex;
         width: 100%;
+        flex-shrink: 0;
         justify-content: space-between;
 
         & div {
@@ -779,5 +1165,33 @@ a.package {
       }
     }
   }
+}
+
+.required {
+  color: var(--color-error) !important;
+}
+
+.mod-edit-reason {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+
+  & input {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    border: none;
+    background-color: var(--color-secondary-background);
+    color: var(--color-text);
+  }
+}
+
+.form-error {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  color: var(--color-error) !important;
+  text-align: center;
+  background-color: var(--color-error-background);
 }
 </style>

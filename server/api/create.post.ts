@@ -2,6 +2,7 @@ import { db } from "../utils/drizzle";
 import * as schema from "../database/schema";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import fs from "fs/promises";
+import path from "node:path";
 
 export default defineEventHandler(async (event) => {
   const token = getCookie(event, "SB_TOKEN");
@@ -23,6 +24,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  await assertNotBanned((decoded as { username: string }).username);
+
   const { name } = await readBody<{ name: string }>(event);
 
   const characters =
@@ -34,9 +37,12 @@ export default defineEventHandler(async (event) => {
     );
   }
 
+  const destination = getFileLocally(`${projectId}.sb3`, "/projects");
+  await fs.mkdir(path.dirname(destination), { recursive: true });
+
   await fs.copyFile(
     getFileLocally("default-project.sb3", "/"),
-    getFileLocally(`${projectId}.sb3`, "/projects"),
+    destination,
   );
 
   await db.insert(schema.projects).values({
@@ -47,6 +53,7 @@ export default defineEventHandler(async (event) => {
     lastUpdated: new Date(),
     private: true,
     user: (decoded as { username: string }).username,
+    fileType: "sb3",
   });
 
   return projectId;

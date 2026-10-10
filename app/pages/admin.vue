@@ -17,12 +17,22 @@ if (user.loggedIn) {
   });
 }
 
-if (!userRoles.includes("admin")) {
+if (
+  (!userRoles.includes("admin") && !userRoles.includes("moderator")) ||
+  userRoles.includes("banned")
+) {
   throw createError({
     statusCode: 403,
     statusMessage: "Forbidden",
   });
 }
+
+const isAdmin = userRoles.includes("admin");
+
+const isElevatedUser = (username: string) =>
+  allRoles.value.some(
+    (r) => r.user === username && ["admin", "moderator"].includes(r.role),
+  );
 
 interface RoleReturn {
   role: string;
@@ -52,111 +62,61 @@ watch(() => allRoles.value, async () => {
   ) as string[];
 }, { immediate: true });
 
-const deleteForm = ref<number | null>(null);
-const deleteFormOpen = ref<boolean>(false);
-watch(deleteForm, async () => {
-  deleteFormOpen.value = deleteForm.value !== null;
-});
+const createFormOpen = ref(false);
 
-const createFormOpen = ref<boolean>(false);
+const onRoleAssigned = async (role: RoleReturn) => {
+  const existingIndex = allRoles.value.findIndex(
+    (r) => r.user === role.user && r.role === role.role,
+  );
+  if (existingIndex !== -1) {
+    allRoles.value[existingIndex] = role;
+    return;
+  }
+
+  allRoles.value.push(role);
+  const profilePic = await getProfilePicture(role.user).catch(() => null);
+  roleProfiles.value.push(profilePic as string);
+};
+
+const deleteForm = ref<{ index: number; user: string; role: string } | null>(
+  null,
+);
+const deleteFormOpen = ref(false);
+const deleteLoading = ref(false);
+const deleteError = ref("");
+
+watch(deleteForm, () => {
+  deleteFormOpen.value = deleteForm.value !== null;
+  deleteError.value = "";
+});
 
 const setSelectedRole = (index: number) => {
-  const role = allRoles.value[index];
-  formState.targetUsername = role!.user;
-  formState.selectedRole = role!.role;
-  deleteForm.value = index;
+  const role = allRoles.value[index]!;
+  deleteForm.value = { index, user: role.user, role: role.role };
 };
 
-interface RoleFormState {
-  targetUsername: string;
-  selectedRole: string;
-  expiryDate: number | null;
-  isLoading: boolean;
-  errorMessage: string;
-  description: string;
-}
+const confirmRemoveRole = async () => {
+  if (!deleteForm.value) return;
 
-const formState = reactive<RoleFormState>({
-  targetUsername: "",
-  selectedRole: "",
-  expiryDate: null,
-  description: "",
-  isLoading: false,
-  errorMessage: "",
-});
-
-const resetForm = () => {
-  formState.targetUsername = "";
-  formState.selectedRole = "";
-  formState.expiryDate = null;
-  formState.description = "";
-  createFormOpen.value = false;
-  deleteForm.value = null;
-  formState.errorMessage = "";
-};
-
-const submitRole = async (remove: boolean) => {
-  formState.errorMessage = "";
-
-  if (!formState.targetUsername.trim()) {
-    formState.errorMessage = "Please enter a username";
-    return;
-  }
-  if (!formState.selectedRole) {
-    formState.errorMessage = "Please select a role";
-    return;
-  }
-  if (
-    formState.expiryDate &&
-    new Date(formState.expiryDate).getTime() < Date.now()
-  ) {
-    formState.errorMessage = "Expiry date cannot be in the past";
-    return;
-  }
-
-  formState.isLoading = true;
-
-  let res;
+  deleteLoading.value = true;
   try {
-    res = await $fetch(`/api/user/${formState.targetUsername}/roles`, {
-      method: remove ? "DELETE" : "POST",
+    const res = await $fetch(`/api/user/${deleteForm.value.user}/roles`, {
+      method: "DELETE",
       headers: useRequestHeaders(["cookie"]),
-      body: {
-        role: formState.selectedRole,
-        expiresAt: formState.expiryDate,
-        description: formState.description,
-      },
+      body: { role: deleteForm.value.role },
     });
     if (res) {
-      if (deleteFormOpen.value) {
-        const deletedIndex = deleteForm.value!;
-        allRoles.value.splice(deletedIndex, 1);
-        roleProfiles.value.splice(deletedIndex, 1);
-      } else if (createFormOpen.value) {
-        const newRole: RoleReturn = {
-          role: formState.selectedRole,
-          user: formState.targetUsername,
-          expiresAt: formState.expiryDate
-            ? new Date(formState.expiryDate).toISOString()
-            : null,
-          description: formState.description || null,
-        };
-        allRoles.value.push(newRole);
-
-        const profilePic = await getProfilePicture(formState.targetUsername)
-          .catch(() => null);
-        roleProfiles.value.push(profilePic as string);
-      }
-      resetForm();
+      allRoles.value.splice(deleteForm.value.index, 1);
+      roleProfiles.value.splice(deleteForm.value.index, 1);
+      deleteForm.value = null;
     } else {
-      formState.errorMessage = remove
-        ? `${formState.targetUsername} does not have the '${formState.selectedRole}' role`
-        : `Failed to assign role`;
+      deleteError.value =
+        `${deleteForm.value.user} does not have the '${deleteForm.value.role}' role`;
     }
   } catch {
-    formState.errorMessage = `Failed to ${remove ? "remove" : "assign"} role`;
+    deleteError.value = "Failed to remove role";
   } finally {
-    formState.isLoading = false;
+    deleteLoading.value = false;
   }
 };
 
@@ -209,8 +169,8 @@ const formatExpiryDate = computed(() => {
 });
 </script>
 <template>
-  <section class="container">
-    <h1>Admin Panel</h1>
+  <section class="admin-container">
+    <h1>Moderation Panel</h1>
 
     <section>
       <h3>Active roles</h3>
@@ -237,7 +197,10 @@ const formatExpiryDate = computed(() => {
         </div>
 
         <button
-          v-if='!(role.user == user.username && role.role == "admin")'
+          v-if='
+            !(role.user == user.username && role.role == "admin") &&
+            (isAdmin || !isElevatedUser(role.user))
+          '
           @click="setSelectedRole(i)"
         >
           <Icon name="ri:delete-bin-line" size="20" style="color: white" />
@@ -249,36 +212,21 @@ const formatExpiryDate = computed(() => {
   <Dialog
     title="Remove Role"
     v-model:open="deleteFormOpen"
-    v-on:update:open="resetForm"
+    v-on:update:open="(open) => { if (!open) deleteForm = null; }"
   >
-    <button @click="submitRole(true)">Confirm</button>
-    <p class="message error" v-if="formState.errorMessage">
-      {{ formState.errorMessage }}
+    <button :disabled="deleteLoading" @click="confirmRemoveRole">
+      Confirm
+    </button>
+    <p class="message error" v-if="deleteError">
+      {{ deleteError }}
     </p>
   </Dialog>
 
-  <Dialog
-    title="Add Role"
+  <RoleDialog
     v-model:open="createFormOpen"
-    v-on:update:open="resetForm"
-  >
-    <label for="targetUsername">Username <span class="required">*</span></label>
-    <input v-model="formState.targetUsername" id="targetUsername" />
-    <label for="selectedRole">Role <span class="required">*</span></label>
-    <select v-model="formState.selectedRole" id="selectedRole">
-      <option value="banned">Banned</option>
-      <option value="admin">Admin</option>
-    </select>
-
-    <label for="expiryDate">Expires At</label>
-    <input type="date" v-model="formState.expiryDate" id="expiryDate" />
-    <label for="description">Reason</label>
-    <input type="text" v-model="formState.description" id="description" />
-    <button @click="submitRole(false)">Create Role</button>
-    <p class="message error" v-if="formState.errorMessage">
-      {{ formState.errorMessage }}
-    </p>
-  </Dialog>
+    :is-admin="isAdmin"
+    @success="onRoleAssigned"
+  />
 </template>
 <style>
 main {
@@ -286,33 +234,6 @@ main {
   flex-direction: column;
   align-items: center;
 }
-input, select, option {
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-  font-size: 1rem;
-  color: var(--color-text);
-  background-color: var(--color-background);
-  border: 2px solid var(--color-background);
-}
-
-input:focus, select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-button {
-  padding: 0.25rem;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 1rem;
-  background-color: var(--color-primary);
-  color: var(--color-primary-text);
-}
-
-.required {
-  color: var(--color-error) !important;
-}
-
 .flex-row {
   display: flex;
   flex-direction: row;
@@ -320,7 +241,7 @@ button {
   gap: 0.5rem;
 }
 
-.container {
+.admin-container {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -392,17 +313,6 @@ button {
   }
 }
 
-.message {
-  margin-top: 1rem;
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-}
-.message.error {
-  color: var(--color-error) !important;
-  text-align: center;
-  background-color: var(--color-error-background);
-}
-
 #add-button {
   display: flex;
   flex-direction: row;
@@ -412,12 +322,13 @@ button {
   border: none;
   padding: 0.5rem;
   margin-top: 0.75rem;
+  background-color: var(--color-primary);
   color: var(--color-primary-text);
   cursor: pointer;
 }
 
 @media (max-width: 912px) {
-  .container {
+  .admin-container {
     padding: 0.5rem;
   }
 
@@ -456,4 +367,3 @@ button {
   }
 }
 </style>
-

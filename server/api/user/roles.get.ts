@@ -5,14 +5,32 @@ import { gt, isNull, or } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const token = getCookie(event, "SB_TOKEN");
-  let decoded: string | JwtPayload | undefined;
 
-  if (!token) return [];
+  if (!token) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Unauthorized",
+    });
+  }
+
+  let decoded: string | JwtPayload;
   try {
     decoded = jwt.verify(token, useRuntimeConfig().jwtSecret);
-  } catch {
-    return [];
+  } catch (e) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Unauthorized",
+    });
   }
+
+  if (typeof decoded === "string") {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Unauthorized",
+    });
+  }
+
+  await assertCanModerate(decoded.username);
 
   const roles = await db
     .select({

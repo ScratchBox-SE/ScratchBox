@@ -1,0 +1,1 @@
+ALTER TABLE `projects` ADD `file_type` text DEFAULT 'sb3' NOT NULL;

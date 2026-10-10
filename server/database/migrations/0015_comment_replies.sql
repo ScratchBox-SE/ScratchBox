@@ -1,0 +1,1 @@
+ALTER TABLE `project_comments` ADD `parent_id` integer;

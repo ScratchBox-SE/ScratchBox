@@ -1,8 +1,16 @@
 <script setup lang="ts">
-const authRedirect = btoa(`${useRequestURL().origin}/api/auth`);
-
 const user = await useCurrentUser();
-const profilePicture = await getProfilePicture(user?.username);
+
+const { data: profilePicture } = await useAsyncData(
+  `profile-${user.username}`,
+  async () => {
+    return await getProfilePicture(user.username);
+  },
+  {
+    watch: [() => user?.username],
+    immediate: !!user?.username,
+  },
+);
 
 const upload = useTemplateRef("upload") as Ref<HTMLInputElement>;
 const { handleFileInput, files } = useFileStorage({ clearOldFiles: false });
@@ -48,6 +56,9 @@ if (user.loggedIn) {
     userRoles = res ?? [];
   } catch {}
 }
+
+const canModerate = (userRoles.includes("admin") ||
+  userRoles.includes("moderator")) && !userRoles.includes("banned");
 
 const isDropdownOpen = ref(false);
 const dropdownRef = useTemplateRef("dropdownRef");
@@ -99,8 +110,10 @@ onUnmounted(() => {
       </template>
       <NuxtLink v-else :to="editorURL">Create</NuxtLink>
       <NuxtLink to="/explore">Explore</NuxtLink>
-      <NuxtLink v-if='userRoles.includes("admin")' to="/admin"
+      <NuxtLink v-if="canModerate" to="/admin"
       >Moderate</NuxtLink>
+      <NuxtLink v-if="canModerate" to="/reports"
+      >Reports</NuxtLink>
       <input
         type="search"
         placeholder="Search..."
@@ -130,11 +143,7 @@ onUnmounted(() => {
           </div>
         </Transition>
       </div>
-      <NuxtLink
-        :to="`https://auth.itinerary.eu.org/auth/?redirect=${authRedirect}&name=ScratchBox`"
-        target="_blank"
-        v-else
-      >Log In</NuxtLink>
+      <NuxtLink to="/login" v-else>Log In</NuxtLink>
     </div>
     <div class="mobile" ref="mobileMenuRef">
       <div class="bar">
@@ -170,8 +179,10 @@ onUnmounted(() => {
           </template>
           <NuxtLink v-else :to="editorURL">Create</NuxtLink>
           <NuxtLink to="/explore">Explore</NuxtLink>
-          <NuxtLink v-if='userRoles.includes("admin")' to="/admin"
+          <NuxtLink v-if="canModerate" to="/admin"
           >Moderate</NuxtLink>
+          <NuxtLink v-if="canModerate" to="/reports"
+          >Reports</NuxtLink>
           <div class="dropdown" v-if="user.loggedIn">
             <a
               href="javascript:void(0);"
@@ -190,11 +201,7 @@ onUnmounted(() => {
               </div>
             </Transition>
           </div>
-          <NuxtLink
-            :to="`https://auth.itinerary.eu.org/auth/?redirect=${authRedirect}&name=ScratchBox`"
-            target="_blank"
-            v-else
-          >Log In</NuxtLink>
+          <NuxtLink to="/login" v-else>Log In</NuxtLink>
         </div>
       </Transition>
     </div>
@@ -206,7 +213,13 @@ onUnmounted(() => {
       />
       <button @click="createProject">Create</button>
     </Dialog>
-    <input type="file" hidden ref="upload" accept=".sb3" @input="onUpload" />
+    <input
+      type="file"
+      hidden
+      ref="upload"
+      accept=".sb3,.sb2,.sb"
+      @input="onUpload"
+    />
   </nav>
 </template>
 <style>

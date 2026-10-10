@@ -24,7 +24,9 @@ export const getProfilePicture = async (username: string | undefined) => {
   if (!username) return null;
 
   const data = await $fetch<UserData>(
-    `https://trampoline.turbowarp.org/api/users/${username}`,
+    import.meta.server
+      ? `https://api.scratch.mit.edu/users/${username}`
+      : `https://trampoline.turbowarp.org/api/users/${username}`,
   );
 
   return data.profile.images["90x90"];

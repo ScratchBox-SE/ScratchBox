@@ -1,0 +1,1 @@
+ALTER TABLE `project_comments` ADD `deleted` integer DEFAULT false NOT NULL;

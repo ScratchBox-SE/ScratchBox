@@ -1,58 +1,37 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "39ef7236-453f-4f1f-9cee-3a41e57bd2dc",
+  "id": "26ddb142-d54f-45ff-8be2-ae8204f2d4c5",
   "prevId": "39aae47e-7c68-4e84-8ac7-dec7860673f4",
   "tables": {
-    "package_tasks": {
-      "name": "package_tasks",
+    "auth_tokens": {
+      "name": "auth_tokens",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
+        "private_code": {
+          "name": "private_code",
+          "type": "text",
           "primaryKey": true,
           "notNull": true,
-          "autoincrement": true
+          "autoincrement": false
         },
-        "project_id": {
-          "name": "project_id",
+        "public_code": {
+          "name": "public_code",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "status": {
-          "name": "status",
-          "type": "text",
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'pending'"
-        },
-        "output_path": {
-          "name": "output_path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "default": "(strftime('%s', 'now'))"
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "package_tasks_project_id_projects_id_fk": {
-          "name": "package_tasks_project_id_projects_id_fk",
-          "tableFrom": "package_tasks",
-          "tableTo": "projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}

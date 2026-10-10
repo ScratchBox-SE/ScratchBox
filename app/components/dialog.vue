@@ -30,15 +30,7 @@ onMounted(() => {
 });
 
 const handleClick = (e: MouseEvent) => {
-  const rect = dialogRef.value?.getBoundingClientRect();
-  if (!rect) return;
-
-  if (
-    e.clientX < rect.left ||
-    e.clientX > rect.right ||
-    e.clientY < rect.top ||
-    e.clientY > rect.bottom
-  ) {
+  if (e.target === dialogRef.value) {
     emit("update:open", false);
   }
 };
@@ -72,7 +64,7 @@ dialog {
   padding: 1rem 1.125rem;
 
   & * {
-    color: var(--color-text) !important;
+    color: var(--color-text);
   }
 
   & > header {
@@ -98,7 +90,8 @@ dialog {
     gap: 1rem;
     font-weight: unset;
 
-    & input {
+    & input,
+    & select {
       background-color: var(--color-background);
       border: none;
       outline: none;
@@ -119,6 +112,10 @@ dialog {
       cursor: pointer;
       font-size: 0.875rem;
       align-self: flex-end;
+
+      & * {
+        color: inherit !important;
+      }
     }
   }
 }

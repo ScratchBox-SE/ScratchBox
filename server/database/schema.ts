@@ -14,6 +14,7 @@ export const projects = sqliteTable("projects", {
   lastUpdated: integer("last_updated", { mode: "timestamp" }).notNull(),
   private: integer("private", { mode: "boolean" }).notNull(),
   user: text("user").notNull(),
+  fileType: text("file_type").default("sb3").notNull(),
 });
 
 export const projectLikes = sqliteTable("project_likes", {
@@ -39,10 +40,45 @@ export const projectComments = sqliteTable("project_comments", {
   createdAt: integer("created_at", { mode: "timestamp" }).default(
     sql`(strftime('%s', 'now'))`,
   ).notNull(),
+  deleted: integer("deleted", { mode: "boolean" }).default(false).notNull(),
+  parentId: integer("parent_id"),
 });
 
 export const unistoreData = sqliteTable("unistore_data", {
   revision: integer("revision").notNull(),
+});
+
+export const authTokens = sqliteTable("auth_tokens", {
+  privateCode: text("private_code").notNull().primaryKey(),
+  publicCode: text("public_code").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(
+    sql`(strftime('%s', 'now'))`,
+  ).notNull(),
+});
+
+export const reports = sqliteTable("reports", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  type: text("type").notNull(), // "project" | "comment"
+  projectId: text("project_id").notNull().references(() => projects.id),
+  commentId: integer("comment_id").references(() => projectComments.id),
+  reporter: text("reporter").notNull(),
+  reason: text("reason").notNull(),
+  status: text("status").default("open").notNull(), // "open" | "resolved" | "dismissed"
+  createdAt: integer("created_at", { mode: "timestamp" }).default(
+    sql`(strftime('%s', 'now'))`,
+  ).notNull(),
+  resolvedAt: integer("resolved_at", { mode: "timestamp" }),
+  resolvedBy: text("resolved_by"),
+});
+
+export const projectEditLog = sqliteTable("project_edit_log", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  projectId: text("project_id").notNull().references(() => projects.id),
+  editedBy: text("edited_by").notNull(),
+  reason: text("reason"),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(
+    sql`(strftime('%s', 'now'))`,
+  ).notNull(),
 });
 
 export const userRoles = sqliteTable("user_roles", {

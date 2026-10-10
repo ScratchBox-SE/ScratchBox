@@ -23,11 +23,18 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     jwtSecret: process.env.JWT_SECRET,
+    authProjectId: process.env.AUTH_PROJECT_ID,
+    authProjectAuthor: process.env.AUTH_PROJECT_AUTHOR,
   },
   fileStorage: {
     mount: process.env.MOUNT,
   },
   routeRules: {
     "/": { redirect: "/explore" },
+  },
+  nitro: {
+    externals: {
+      trace: false,
+    },
   },
 });
