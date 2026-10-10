@@ -139,6 +139,12 @@ onUnmounted(() => {
       <p>Something went wrong starting the login process.</p>
       <button @click="start">Try Again</button>
     </template>
+
+    <p class="terms-notice">
+      By logging in, you agree to ScratchBox's
+      <NuxtLink to="/terms">Terms of Service</NuxtLink>
+      and <NuxtLink to="/rules">Rules</NuxtLink>.
+    </p>
   </div>
 </template>
 <style>
@@ -205,6 +211,14 @@ body.login-page main {
     margin-top: 1rem;
     opacity: 0.8;
     font-size: 0.9rem;
+  }
+
+  & .terms-notice {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-blockquote);
+    opacity: 0.7;
+    font-size: 0.8rem;
   }
 
   & button {

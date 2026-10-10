@@ -4,4 +4,5 @@
     <BanNotice />
     <slot />
   </main>
+  <Footer />
 </template>

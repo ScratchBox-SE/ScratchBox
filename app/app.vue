@@ -46,8 +46,15 @@ useHead({
 body,
 html {
   width: 100vw;
+  height: 100%;
   background: var(--color-background);
   transition: 50ms background ease-in-out;
+}
+
+#__nuxt {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 a {
