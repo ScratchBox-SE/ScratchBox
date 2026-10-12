@@ -360,6 +360,7 @@ watch(logs, async () => {
     flex-wrap: wrap;
     gap: 0.5rem;
     max-width: 48rem;
+    margin-bottom: 1rem;
 
     & button {
       color: var(--color-text);
