@@ -360,7 +360,6 @@ watch(logs, async () => {
     flex-wrap: wrap;
     gap: 0.5rem;
     max-width: 48rem;
-    margin-bottom: 1rem;
 
     & button {
       color: var(--color-text);
@@ -391,6 +390,7 @@ watch(logs, async () => {
     gap: 1rem;
     align-items: center;
     justify-content: center;
+    margin-bottom: 1rem;
 
     & label {
       font-weight: bold;
@@ -430,6 +430,7 @@ watch(logs, async () => {
     font-weight: bold;
     cursor: pointer;
     transition: 100ms all ease-in-out;
+    margin-top: 1rem;
 
     &:hover {
       filter: brightness(1.1);
