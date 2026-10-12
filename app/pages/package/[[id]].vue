@@ -339,6 +339,10 @@ watch(logs, async () => {
     margin-bottom: 0.5rem;
   }
 
+  & h2 {
+    margin: 1.5rem 0;
+  }
+
   & p {
     font-size: 1.15rem;
   }
