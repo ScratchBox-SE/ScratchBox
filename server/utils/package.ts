@@ -13,6 +13,7 @@ import {
 import { getPlatform } from "../packager/platforms";
 import { readToolkitMetadata, toolkitDir } from "../packager/packageToolkit";
 import { generateProjectIcons } from "../packager/projectIcons";
+import { toHostPath } from "./hostPath";
 
 interface PackagerAppInfo {
   name?: string;
@@ -185,11 +186,13 @@ export const runBuild = async (
     "run",
     "--rm",
     "-v",
-    `${buildRootDir}:${platform.containerRoot}/${platform.buildDir}`,
+    `${
+      toHostPath(buildRootDir)
+    }:${platform.containerRoot}/${platform.buildDir}`,
     "-v",
-    `${BUNDLE_RUNTIME_INCLUDE_DIR}:/scratchbox-bundle-runtime:ro`,
+    `${toHostPath(ensureBundleRuntime(mount))}:/scratchbox-bundle-runtime:ro`,
     "-v",
-    `${outputDir}:/out`,
+    `${toHostPath(outputDir)}:/out`,
     "-w",
     `${platform.containerRoot}/${platform.buildDir}`,
   ];
@@ -217,7 +220,7 @@ export const runBuild = async (
     for (const toolchainDir of toolchainDirs) {
       const hostPath = path.join(absDir, toolchainDir);
       if (fs.existsSync(hostPath)) {
-        dockerArgs.push("-v", `${hostPath}:${toolchainDir}:ro`);
+        dockerArgs.push("-v", `${toHostPath(hostPath)}:${toolchainDir}:ro`);
       }
     }
 
@@ -233,16 +236,19 @@ export const runBuild = async (
         continue;
       }
       if (generatedIconPaths.has(`/${relPath}`)) continue;
-      dockerArgs.push("-v", `${absPath}:/${relPath}:ro`);
+      dockerArgs.push("-v", `${toHostPath(absPath)}:/${relPath}:ro`);
     }
   }
 
   if (platform.romfsDir && romfsStageDir) {
-    dockerArgs.push("-v", `${romfsStageDir}:${platform.romfsDir}:ro`);
+    dockerArgs.push(
+      "-v",
+      `${toHostPath(romfsStageDir)}:${platform.romfsDir}:ro`,
+    );
   }
 
   for (const icon of generatedIcons) {
-    dockerArgs.push("-v", `${icon.hostPath}:${icon.absPath}:ro`);
+    dockerArgs.push("-v", `${toHostPath(icon.hostPath)}:${icon.absPath}:ro`);
   }
 
   dockerArgs.push(platform.image, "sh", "-c", script);
@@ -265,6 +271,16 @@ export const runBuild = async (
   }
   zip.writeZip(zipPath);
   return zipPath;
+};
+
+let bundleRuntimeDir: string | undefined;
+const ensureBundleRuntime = (mount: string): string => {
+  if (bundleRuntimeDir) return bundleRuntimeDir;
+  const dir = path.join(mount, "package", "bundle-runtime");
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.mkdirSync(path.dirname(dir), { recursive: true });
+  fs.cpSync(BUNDLE_RUNTIME_INCLUDE_DIR, dir, { recursive: true });
+  return (bundleRuntimeDir = dir);
 };
 
 const collectAssetFiles = (tkDir: string): BundleFileEntry[] => {

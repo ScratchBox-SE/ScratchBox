@@ -23,8 +23,11 @@ FROM ${BASE_IMAGE}
 ARG BASE_IMAGE
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl unzip ca-certificates sqlite3 pngquant \
+    curl unzip ca-certificates sqlite3 pngquant git \
     && rm -rf /var/lib/apt/lists/*
+
+COPY --from=docker:cli /usr/local/bin/docker /usr/local/bin/docker
+COPY --from=docker:cli /usr/local/libexec/docker/cli-plugins/docker-buildx /usr/local/lib/docker/cli-plugins/docker-buildx
 
 ENV BUN_INSTALL=/root/.bun
 ENV PATH=$BUN_INSTALL/bin:$PATH

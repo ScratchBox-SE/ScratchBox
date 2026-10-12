@@ -12,10 +12,8 @@ services:
       - NITRO_AUTH_PROJECT_ID=${AUTH_PROJECT_ID}
       - NITRO_AUTH_PROJECT_AUTHOR=${AUTH_PROJECT_AUTHOR}
       - DB_URL=/data/sqlite.db
-      # - ENABLE_UNISTORE=true # requires the BASE_IMAGE build arg above too
+      - HOST_MOUNT=${SB_DATA_DIR}/sb-root
     volumes:
-      - scratchbox-data:/data
+      - ${SB_DATA_DIR:?set SB_DATA_DIR to an absolute host path}:/data
+      - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
-
-volumes:
-  scratchbox-data:
