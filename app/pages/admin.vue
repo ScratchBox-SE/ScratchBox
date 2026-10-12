@@ -395,7 +395,8 @@ const formatExpiryDate = computed(() => {
     v-model:open="logDialogOpen"
   >
     <p v-if="logDialogLoading">Loading...</p>
-    <pre v-else ref="logContainer" class="toolkit-log">{{ logDialogContent }}</pre>
+    <pre v-else ref="logContainer"
+      class="toolkit-log">{{ logDialogContent }}</pre>
   </Dialog>
 
   <Dialog

@@ -96,7 +96,8 @@ export const runBuild = async (
     try {
       const data = JSON.parse(fs.readFileSync(appInfoPath, "utf8"));
       data.title = appInfo.name || "Scratch Everywhere!";
-      data.appDescription = appInfo.description || "Play Scratch games on anything!";
+      data.appDescription = appInfo.description ||
+        "Play Scratch games on anything!";
       data.version = formatWebOSVersion(appInfo.version);
       if (
         appInfo.titleId &&
@@ -114,7 +115,10 @@ export const runBuild = async (
             "__SE_APP_DESCRIPTION__",
             appInfo.description ?? "Play Scratch games on anything!",
           )
-          .replaceAll("__SE_APP_VERSION__", formatWebOSVersion(appInfo.version)),
+          .replaceAll(
+            "__SE_APP_VERSION__",
+            formatWebOSVersion(appInfo.version),
+          ),
       );
     }
   }
@@ -396,7 +400,9 @@ export const formatWebOSVersion = (version?: string): string => {
     nums.push(0);
   }
   const candidate = nums.slice(0, 3).join(".");
-  if (/^(0|[1-9]\d{0,8})\.(0|[1-9]\d{0,8})\.(0|[1-9]\d{0,8})$/.test(candidate)) {
+  if (
+    /^(0|[1-9]\d{0,8})\.(0|[1-9]\d{0,8})\.(0|[1-9]\d{0,8})$/.test(candidate)
+  ) {
     return candidate;
   }
   return "1.0.0";
