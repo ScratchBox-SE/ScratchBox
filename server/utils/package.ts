@@ -186,6 +186,7 @@ export const runBuild = async (
     cmakePreinstallStub: platform.cmakePreinstallStub,
   });
 
+  const buildMountPath = `${platform.containerRoot}/${platform.buildDir}`;
   const dockerArgs = [
     "run",
     "--rm",
@@ -241,6 +242,17 @@ export const runBuild = async (
       }
       if (generatedIconPaths.has(`/${relPath}`)) continue;
       if (isBundleArtifact(relPath)) continue;
+      if (`/${relPath}`.startsWith(`${buildMountPath}/`)) {
+        const dest = path.join(
+          buildRootDir,
+          `/${relPath}`.slice(buildMountPath.length + 1),
+        );
+        if (!fs.existsSync(dest)) {
+          fs.mkdirSync(path.dirname(dest), { recursive: true });
+          fs.copyFileSync(absPath, dest);
+        }
+        continue;
+      }
       dockerArgs.push("-v", `${toHostPath(absPath)}:/${relPath}:ro`);
     }
   }
