@@ -24,6 +24,10 @@ interface PackagerAppInfo {
   contentId?: string;
 }
 
+const BUNDLE_ARTIFACT_RE =
+  /(^|[\\/])(libse_(project|assets)\.a|se_(project|assets)_(data|archive)[^\\/]*)$|(^|[\\/])bundle[\\/]se_(project|assets)/;
+const isBundleArtifact = (p: string): boolean => BUNDLE_ARTIFACT_RE.test(p);
+
 export const runBuild = async (
   projectId: string,
   projectPath: string,
@@ -67,7 +71,7 @@ export const runBuild = async (
   fs.cpSync(
     path.join(tkDir, "objects", path.basename(platform.buildDir)),
     buildRootDir,
-    { recursive: true },
+    { recursive: true, filter: (src) => !isBundleArtifact(src) },
   );
 
   if (metadata.resourceCompileCommand) {
@@ -236,6 +240,7 @@ export const runBuild = async (
         continue;
       }
       if (generatedIconPaths.has(`/${relPath}`)) continue;
+      if (isBundleArtifact(relPath)) continue;
       dockerArgs.push("-v", `${toHostPath(absPath)}:/${relPath}:ro`);
     }
   }
@@ -374,6 +379,7 @@ const buildRelinkScript = (opts: {
       lines.push(
         `${opts.cc} ${flags} -c ${name}_data.S -o ${name}_data.S.o`,
         `${opts.cc} ${flags} -I /scratchbox-bundle-runtime -c ${name}_archive.c -o ${name}_archive.c.o`,
+        `rm -f lib${name}.a`,
         `${opts.ar} rcs lib${name}.a ${name}_data.S.o ${name}_archive.c.o`,
       );
     }

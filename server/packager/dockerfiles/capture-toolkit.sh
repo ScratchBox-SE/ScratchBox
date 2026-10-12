@@ -59,6 +59,7 @@ mirror_abs_path() {
   p="$1"
   case "$p" in *[!/]*) ;; *) return 0 ;; esac
   [ -f "$p" ] || [ -d "$p" ] || return 0
+  is_bundle_path "$p" && return 0
   case "$p" in /usr/*|/lib/*|/bin/*|/sbin/*) return 0 ;; esac
   for BUILD_DIR in $BUILD_DIRS; do
     case "$p" in
