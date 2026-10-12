@@ -23,7 +23,7 @@ FROM ${BASE_IMAGE}
 ARG BASE_IMAGE
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl unzip ca-certificates sqlite3 \
+    curl unzip ca-certificates sqlite3 pngquant \
     && rm -rf /var/lib/apt/lists/*
 
 ENV BUN_INSTALL=/root/.bun

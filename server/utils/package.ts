@@ -12,6 +12,7 @@ import {
 } from "../packager/bundleArchive";
 import { getPlatform } from "../packager/platforms";
 import { readToolkitMetadata, toolkitDir } from "../packager/packageToolkit";
+import { generateProjectIcons } from "../packager/projectIcons";
 
 interface PackagerAppInfo {
   name?: string;
@@ -200,6 +201,17 @@ export const runBuild = async (
     ).filter(Boolean)
     : [];
 
+  const thumbnailPath = getFileLocally(`${projectId}.png`, "/thumbnails");
+  const iconStageDir = path.join(workDir, "icons");
+  const generatedIcons = await generateProjectIcons(
+    platform,
+    thumbnailPath,
+    iconStageDir,
+  );
+  const generatedIconPaths = new Set(
+    generatedIcons.map((icon) => icon.absPath),
+  );
+
   const absDir = path.join(tkDir, "abs");
   if (fs.existsSync(absDir)) {
     for (const toolchainDir of toolchainDirs) {
@@ -220,12 +232,17 @@ export const runBuild = async (
       if (toolchainDirs.some((d) => `/${relPath}`.startsWith(`${d}/`))) {
         continue;
       }
+      if (generatedIconPaths.has(`/${relPath}`)) continue;
       dockerArgs.push("-v", `${absPath}:/${relPath}:ro`);
     }
   }
 
   if (platform.romfsDir && romfsStageDir) {
     dockerArgs.push("-v", `${romfsStageDir}:${platform.romfsDir}:ro`);
+  }
+
+  for (const icon of generatedIcons) {
+    dockerArgs.push("-v", `${icon.hostPath}:${icon.absPath}:ro`);
   }
 
   dockerArgs.push(platform.image, "sh", "-c", script);

@@ -81,7 +81,7 @@ export const PACKAGER_PLATFORMS: PackagerPlatform[] = [
     buildDir: "build-wiiu",
     outputs: ["scratch-wiiu.zip"],
     bundleOS: "unix",
-    extraPackageTargets: ["package_wiiu"],
+    extraPackageTargets: ["scratch-everywhere_wuhb", "package_wiiu"],
   },
   {
     id: "gamecube",
@@ -114,6 +114,7 @@ export const PACKAGER_PLATFORMS: PackagerPlatform[] = [
     buildDir: "build-nx",
     outputs: ["scratch-nx.nro"],
     bundleOS: "unix",
+    extraPackageTargets: ["scratch-everywhere_nro"],
   },
   {
     id: "vita",
