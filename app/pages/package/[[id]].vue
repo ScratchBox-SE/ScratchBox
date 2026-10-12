@@ -218,7 +218,7 @@ watch(logs, async () => {
   <div class="package-wrapper">
     <h1>Packager</h1>
     <p
-      class="disclaimer">ⓘ Disclaimer: Do not use this packager as a means to obfuscate or hide the project's code, it is is possible to retrieve using the [unbundle.ts](github.com/gradylink/bundle.cmake/blob/main/unbundle.ts) script from bundle.cmake.</p>
+      class="disclaimer">ⓘ Disclaimer: Do not use this packager as a means to obfuscate or hide the project's code, it is is possible to retrieve using the <a href="https://github.com/gradylink/bundle.cmake/blob/main/unbundle.ts">unbundle.ts</a> script from bundle.cmake.</p>
     <template v-if="project">
       <template v-if="building || taskId != null">
         <template v-if="taskId != null">
