@@ -8,7 +8,7 @@ const platformsMap = {
   "gamecube": "GameCube",
   "vita": "Vita",
   "ps4": "PS4",
-  "ds": "DS",
+  "nds": "DS",
   "macos": "macOS",
   "linux": "Linux",
   "windows": "Windows",
@@ -65,7 +65,7 @@ const platformSupportMap = {
     description: false,
     version: true,
   },
-  "ds": {
+  "nds": {
     name: true,
     author: true,
     description: true,
@@ -84,10 +84,10 @@ const platformSupportMap = {
     version: false,
   },
   "windows": {
-    name: false,
-    author: false,
-    description: false,
-    version: false,
+    name: true,
+    author: true,
+    description: true,
+    version: true,
   },
   "psp": {
     name: true,
@@ -133,6 +133,19 @@ const project = ref() as typeof fetchedProject;
 watch(fetchedProject, (val) => (project.value = val), { immediate: true });
 
 const selectedPlatform = ref<keyof typeof platformsMap | null>(null);
+
+const toolkitStatuses = ref<Record<string, string>>({});
+try {
+  const statuses = await $fetch<{ platform: string; status: string }[]>(
+    "/api/package-toolkits",
+  );
+  toolkitStatuses.value = Object.fromEntries(
+    statuses.map((s) => [s.platform, s.status]),
+  );
+} catch {}
+
+const isPlatformReady = (platform: keyof typeof platformsMap) =>
+  toolkitStatuses.value[platform] === "ready";
 
 const name = ref(project.value?.name || "");
 const description = ref(project.value?.description || "");
@@ -221,16 +234,16 @@ watch(logs, async () => {
       </template>
       <template v-else>
         <p v-if="projectId">
-          Project: <NuxtLink :to="`/project/${projectId}`">{{
-            project.name
-          }}</NuxtLink>
+          Project: <NuxtLink :to="`/project/${projectId}`">{{ project.name }}</NuxtLink>
         </p>
         <h2>Select a Platform</h2>
         <div class="platforms">
           <button
             v-for="(platformName, platform) in platformsMap"
-            @click="selectedPlatform = platform"
-            :class="{ active: selectedPlatform === platform }"
+            @click="isPlatformReady(platform) && (selectedPlatform = platform)"
+            :class="{ active: selectedPlatform === platform, unavailable: !isPlatformReady(platform) }"
+            :disabled="!isPlatformReady(platform)"
+            :title="isPlatformReady(platform) ? '' : 'Not available yet'"
           >
             {{ platformName }}
           </button>
@@ -348,6 +361,11 @@ watch(logs, async () => {
         color: var(--color-primary-text);
         background-color: var(--color-primary);
       }
+
+      &.unavailable {
+        opacity: 0.5;
+        cursor: default;
+      }
     }
   }
 
@@ -371,7 +389,8 @@ watch(logs, async () => {
       transition: 100ms all ease-in-out;
       font-size: 1rem;
 
-      &:active, &:focus {
+      &:active,
+      &:focus {
         background-color: var(--color-card-background);
         border-color: var(--color-card-background);
       }
@@ -388,6 +407,16 @@ watch(logs, async () => {
     font-size: 1.25rem;
     padding: 0.75rem 1.25rem;
     border-radius: 1rem;
+    border: none;
+    background-color: var(--color-primary);
+    color: var(--color-primary-text);
+    font-weight: bold;
+    cursor: pointer;
+    transition: 100ms all ease-in-out;
+
+    &:hover {
+      filter: brightness(1.1);
+    }
   }
 }
 

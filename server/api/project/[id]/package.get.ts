@@ -25,33 +25,13 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const folderPath = path.join(
-      process.env.MOUNT as string,
-      "tmp",
-      "builds",
-      taskId.toString(),
-    );
-    if (!fs.existsSync(folderPath)) {
+    if (!task.outputPath || !fs.existsSync(task.outputPath)) {
       throw createError({
         statusCode: 404,
         statusMessage: "Output not found.",
       });
     }
-
-    const files = fs.readdirSync(folderPath);
-    if (files.length == 0) {
-      throw createError({
-        statusCode: 404,
-        statusMessage: "Output not found.",
-      });
-    }
-    if (files.length > 1) {
-      throw createError({
-        statusCode: 500,
-        statusMessage: "Multiple outputs detected.",
-      });
-    }
-    const filePath = path.join(folderPath, files[0] as string);
+    const filePath = task.outputPath;
 
     setHeader(
       event,

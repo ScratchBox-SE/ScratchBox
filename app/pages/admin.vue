@@ -34,6 +34,135 @@ const isElevatedUser = (username: string) =>
     (r) => r.user === username && ["admin", "moderator"].includes(r.role),
   );
 
+interface ToolkitStatus {
+  platform: string;
+  displayName: string;
+  status: string;
+  seRef: string | null;
+  seCommit: string | null;
+  error: string | null;
+  builtAt: string | null;
+}
+
+const toolkits = ref<ToolkitStatus[]>([]);
+const updateLoading = ref(false);
+const updateNightlyLoading = ref(false);
+const stopLoading = ref(false);
+
+const fetchToolkits = async () => {
+  toolkits.value = await $fetch<ToolkitStatus[]>(
+    "/api/admin/package-toolkits",
+    { headers: useRequestHeaders(["cookie"]) },
+  );
+};
+
+if (isAdmin) {
+  await fetchToolkits();
+}
+
+let toolkitPollTimer: ReturnType<typeof setInterval> | null = null;
+const startToolkitPolling = () => {
+  if (toolkitPollTimer) return;
+  toolkitPollTimer = setInterval(async () => {
+    await fetchToolkits();
+    if (!toolkits.value.some((t) => t.status === "building")) {
+      clearInterval(toolkitPollTimer!);
+      toolkitPollTimer = null;
+    }
+  }, 3000);
+};
+
+if (
+  import.meta.client && isAdmin &&
+  toolkits.value.some((t) => t.status === "building")
+) {
+  startToolkitPolling();
+}
+
+const triggerPackagerUpdate = async (nightly: boolean) => {
+  const loading = nightly ? updateNightlyLoading : updateLoading;
+  loading.value = true;
+  try {
+    await $fetch(
+      `/api/admin/package-toolkits/update${nightly ? "-nightly" : ""}`,
+      { method: "POST", headers: useRequestHeaders(["cookie"]) },
+    );
+    await fetchToolkits();
+    startToolkitPolling();
+  } finally {
+    loading.value = false;
+  }
+};
+
+const formatShortCommit = (commit: string | null) =>
+  commit ? commit.slice(0, 7) : "—";
+
+const triggerStopUpdates = async () => {
+  stopLoading.value = true;
+  try {
+    await $fetch("/api/admin/package-toolkits/stop", {
+      method: "POST",
+      headers: useRequestHeaders(["cookie"]),
+    });
+    startToolkitPolling();
+  } finally {
+    stopLoading.value = false;
+  }
+};
+
+const logDialogOpen = ref(false);
+const logDialogPlatform = ref<string | null>(null);
+const logDialogContent = ref("");
+const logDialogLoading = ref(false);
+
+let logPollTimer: ReturnType<typeof setInterval> | null = null;
+const stopLogPolling = () => {
+  if (logPollTimer) {
+    clearInterval(logPollTimer);
+    logPollTimer = null;
+  }
+};
+
+const fetchToolkitLog = async (platform: string) => {
+  try {
+    const res = await $fetch<{ log: string; status: string }>(
+      `/api/admin/package-toolkits/${platform}/logs`,
+      { headers: useRequestHeaders(["cookie"]) },
+    );
+    logDialogContent.value = res.log || "No log yet.";
+    if (res.status !== "building") stopLogPolling();
+  } catch {
+    logDialogContent.value = "Failed to load log.";
+    stopLogPolling();
+  }
+};
+
+const viewToolkitLog = async (platform: string) => {
+  logDialogPlatform.value = platform;
+  logDialogOpen.value = true;
+  logDialogLoading.value = true;
+  logDialogContent.value = "";
+  await fetchToolkitLog(platform);
+  logDialogLoading.value = false;
+
+  stopLogPolling();
+  logPollTimer = setInterval(() => fetchToolkitLog(platform), 1500);
+};
+
+watch(logDialogOpen, (open) => {
+  if (!open) stopLogPolling();
+});
+
+onUnmounted(() => stopLogPolling());
+
+const logContainer = useTemplateRef("logContainer");
+watch(logDialogContent, async () => {
+  await nextTick();
+  if (logContainer.value) {
+    logContainer.value.scrollTop = logContainer.value.scrollHeight;
+  }
+});
+
 interface RoleReturn {
   role: string;
   user: string;
@@ -174,7 +303,7 @@ const formatExpiryDate = computed(() => {
 
     <section>
       <h3>Active roles</h3>
-      <button @click="createFormOpen = true" id="add-button">
+      <button @click="createFormOpen = true" class="admin-action-button">
         <Icon name="ri:add-fill" style="color: white" /> Add Role
       </button>
       <div v-for="(role, i) in allRoles" class="role-card">
@@ -207,7 +336,67 @@ const formatExpiryDate = computed(() => {
         </button>
       </div>
     </section>
+
+    <section v-if="isAdmin">
+      <h3>Packager</h3>
+      <div class="flex-row">
+        <button
+          class="admin-action-button"
+          :disabled="updateLoading"
+          @click="triggerPackagerUpdate(false)"
+        >
+          Update Packager
+        </button>
+        <button
+          class="admin-action-button"
+          :disabled="updateNightlyLoading"
+          @click="triggerPackagerUpdate(true)"
+        >
+          Update Packager (Nightly)
+        </button>
+        <button
+          class="admin-action-button stop"
+          :disabled="stopLoading"
+          @click="triggerStopUpdates"
+        >
+          Stop Updates
+        </button>
+      </div>
+      <div v-for="toolkit in toolkits" :key="toolkit.platform"
+        class="role-card">
+        <div class="user-details">
+          <p class="role-text">{{ toolkit.displayName }}</p>
+          <p class="role-text" :class="`toolkit-status-${toolkit.status}`">
+            {{ toolkit.status }}
+          </p>
+          <span v-if="toolkit.seRef" class="flex-row">
+            <p>{{ toolkit.seRef }}</p>
+            <p
+              v-if="toolkit.seCommit">@ {{ formatShortCommit(toolkit.seCommit) }}</p>
+          </span>
+          <span v-if="toolkit.error" class="flex-row">
+            <p class="role-text toolkit-status-failed">{{ toolkit.error }}</p>
+          </span>
+        </div>
+
+        <button class="log-button" @click="viewToolkitLog(toolkit.platform)">
+          <Icon
+            name="ri:terminal-box-line"
+            size="20"
+            style="color: var(--color-text)"
+          />
+        </button>
+      </div>
+    </section>
   </section>
+
+  <Dialog
+    :title="`${logDialogPlatform} log`"
+    v-model:open="logDialogOpen"
+  >
+    <p v-if="logDialogLoading">Loading...</p>
+    <pre v-else ref="logContainer" class="toolkit-log">{{ logDialogContent }}</pre>
+  </Dialog>
 
   <Dialog
     title="Remove Role"
@@ -234,6 +423,11 @@ main {
   flex-direction: column;
   align-items: center;
 }
+
+section {
+  margin-bottom: 1rem;
+}
+
 .flex-row {
   display: flex;
   flex-direction: row;
@@ -311,20 +505,59 @@ main {
     flex-shrink: 0;
     margin-left: 1rem;
   }
+
+  & .log-button {
+    background-color: var(--color-secondary-background);
+  }
 }
 
-#add-button {
+.admin-action-button {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
   border-radius: 10rem;
   border: none;
-  padding: 0.5rem;
+  padding: 0.5rem 1.25rem;
   margin-top: 0.75rem;
   background-color: var(--color-primary);
   color: var(--color-primary-text);
+  font-weight: bold;
   cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  &.stop {
+    background-color: var(--color-error);
+    color: #fff;
+  }
+}
+
+.toolkit-log {
+  text-align: left;
+  background: var(--color-background);
+  padding: 1rem;
+  width: 100%;
+  min-height: 10rem;
+  max-height: 35vw;
+  overflow: scroll;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.toolkit-status-ready {
+  color: var(--color-primary) !important;
+}
+
+.toolkit-status-failed {
+  color: var(--color-error) !important;
+}
+
+.toolkit-status-building {
+  opacity: 0.7;
 }
 
 @media (max-width: 912px) {

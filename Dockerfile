@@ -37,6 +37,7 @@ COPY --from=build /app/.output ./.output
 COPY --from=build /app/drizzle.config.ts ./drizzle.config.ts
 COPY --from=build /app/server/database/schema.ts ./server/database/schema.ts
 COPY --from=build /app/server/database/migrations ./server/database/migrations
+COPY --from=build /app/server/packager ./server/packager
 COPY --from=build /app/package.json ./package.json
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
