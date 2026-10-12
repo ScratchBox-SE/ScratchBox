@@ -58,6 +58,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  assertNoBlockedWords({ Comment: content });
+
   const projectId = getRouterParam(event, "id") as string;
 
   let validatedParentId: number | null = null;

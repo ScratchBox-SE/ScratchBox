@@ -17,6 +17,9 @@ interface CommentContext {
   user: { loggedIn: boolean; username: string };
   canModerate: boolean;
   editingComment: Ref<{ id: number; content: string }>;
+  commentError: Ref<
+    { target: "new" | "reply" | "edit"; message: string } | null
+  >;
   editComment: (comment: { id: number; content: string }) => void;
   stopEditingComment: () => void;
   saveComment: () => Promise<void>;
@@ -93,6 +96,9 @@ const ctx = inject<CommentContext>("commentContext")!;
         @keydown.escape="ctx.stopEditingComment()"
         maxlength="500"
       />
+      <p class="form-error" v-if="ctx.commentError.value?.target === 'edit'">
+        {{ ctx.commentError.value.message }}
+      </p>
 
       <div class="button-spacer">
         <button @click="ctx.stopEditingComment()">
@@ -135,6 +141,9 @@ const ctx = inject<CommentContext>("commentContext")!;
         maxlength="500"
         @keydown.escape="ctx.cancelReply()"
       />
+      <p class="form-error" v-if="ctx.commentError.value?.target === 'reply'">
+        {{ ctx.commentError.value.message }}
+      </p>
 
       <div class="button-spacer">
         <button @click="ctx.cancelReply()">

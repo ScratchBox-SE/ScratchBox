@@ -19,14 +19,40 @@ const search = ref(useRoute().query.q || "");
 
 const { currentTheme, toggleTheme } = useTheme();
 
+const { findBlockedWordError } = useBlockedWordCheck();
+const errorMessage = (e: unknown, fallback: string) =>
+  (e as { data?: { statusMessage?: string } })?.data?.statusMessage ??
+    fallback;
+
 const onUpload = async (e: Event) => {
+  const input = e.target as HTMLInputElement;
   await handleFileInput(e);
-  await navigateTo(
-    `/project/${await $fetch("/api/upload", {
-      method: "POST",
-      body: files.value[0],
-    })}`,
-  );
+  const file = files.value[0];
+
+  const blockedWordError = file && await findBlockedWordError({
+    "Project name (taken from the file name)": file.name.replace(
+      /\.[^.]+$/,
+      "",
+    ),
+  });
+
+  try {
+    if (!blockedWordError) {
+      await navigateTo(
+        `/project/${await $fetch("/api/upload", {
+          method: "POST",
+          body: file,
+        })}`,
+      );
+      return;
+    }
+    alert(blockedWordError);
+  } catch (err) {
+    alert(errorMessage(err, "Failed to upload project"));
+  }
+
+  files.value = [];
+  input.value = "";
 };
 
 const editorURL = import.meta.dev
@@ -35,15 +61,30 @@ const editorURL = import.meta.dev
 
 const createDialogOpen = ref(false);
 const createProjectName = ref("");
+const createProjectError = ref("");
 
 const createProject = async () => {
-  await navigateTo(
-    `${editorURL}/#${await $fetch("/api/create", {
-      method: "POST",
-      body: { name: createProjectName.value },
-    })}`,
-    { external: true },
-  );
+  createProjectError.value = "";
+
+  const blockedWordError = await findBlockedWordError({
+    "Project name": createProjectName.value,
+  });
+  if (blockedWordError) {
+    createProjectError.value = blockedWordError;
+    return;
+  }
+
+  try {
+    await navigateTo(
+      `${editorURL}/#${await $fetch("/api/create", {
+        method: "POST",
+        body: { name: createProjectName.value },
+      })}`,
+      { external: true },
+    );
+  } catch (e) {
+    createProjectError.value = errorMessage(e, "Failed to create project");
+  }
 };
 
 let userRoles: string[] = [];
@@ -210,7 +251,11 @@ onUnmounted(() => {
         type="text"
         placeholder="Project Name..."
         v-model="createProjectName"
+        @input="createProjectError = ''"
       />
+      <p class="create-error" v-if="createProjectError">
+        {{ createProjectError }}
+      </p>
       <button @click="createProject">Create</button>
     </Dialog>
     <input
@@ -224,6 +269,14 @@ onUnmounted(() => {
 </template>
 <style>
 /* FIXME: clean up the css as well */
+
+.create-error {
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  color: var(--color-error);
+  text-align: center;
+  background-color: var(--color-error-background);
+}
 
 .dropdown {
   position: relative;

@@ -72,6 +72,13 @@ export default defineEventHandler(async (event) => {
     },
   );
 
+  const changedText: Record<string, string> = {};
+  if (body.name !== project.name) changedText["Project name"] = body.name;
+  if (body.description !== project.description) {
+    changedText["Description"] = body.description;
+  }
+  assertNoBlockedWords(changedText);
+
   if (isModEdit) {
     if (body.file || body.thumbnail) {
       throw createError({

@@ -31,6 +31,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 415, statusMessage: "Invalid file type" });
   }
 
+  assertNoBlockedWords({
+    "Project name (taken from the file name)": file.name.slice(
+      0,
+      -(extension.length + 1),
+    ),
+  });
+
   validateProjectFile(parseDataUrl(file.content).binaryString, extension);
 
   const storedFilename = await storeFileLocally(file, 12, "/projects");

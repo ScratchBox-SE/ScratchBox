@@ -292,6 +292,19 @@ const save = async () => {
     return;
   }
 
+  const changedText: Record<string, string> = {};
+  if (name.value !== project.value?.name) {
+    changedText["Project name"] = name.value;
+  }
+  if (description.value !== project.value?.description) {
+    changedText["Description"] = description.value;
+  }
+  const blockedWordError = await findBlockedWordError(changedText);
+  if (blockedWordError) {
+    modEditError.value = blockedWordError;
+    return;
+  }
+
   try {
     await $fetch(`/api/project/${projectId}/edit`, {
       method: "POST",
@@ -315,12 +328,42 @@ const save = async () => {
   }
 };
 
-const postComment = async (content: string, parentId: number | null) => {
+const { findBlockedWordError } = useBlockedWordCheck();
+
+const commentError = ref<
+  { target: "new" | "reply" | "edit"; message: string } | null
+>(null);
+
+const errorMessage = (e: unknown, fallback: string) =>
+  (e as { data?: { statusMessage?: string } })?.data?.statusMessage ??
+    fallback;
+
+const postComment = async (
+  content: string,
+  parentId: number | null,
+  target: "new" | "reply",
+): Promise<boolean> => {
+  commentError.value = null;
+
+  const blockedWordError = await findBlockedWordError({ Comment: content });
+  if (blockedWordError) {
+    commentError.value = { target, message: blockedWordError };
+    return false;
+  }
+
   const commentId = await $fetch(`/api/project/${projectId}/comment`, {
     method: "POST",
     headers: useRequestHeaders(["cookie"]),
     body: { content, parentId },
+  }).catch((e) => {
+    commentError.value = {
+      target,
+      message: errorMessage(e, "Failed to post comment"),
+    };
+    return null;
   });
+  if (commentId === null) return false;
+
   project.value!.comments = [
     ...project.value!.comments,
     {
@@ -335,29 +378,34 @@ const postComment = async (content: string, parentId: number | null) => {
       deleted: false,
     },
   ];
+  return true;
 };
 
 const comment = async () => {
   if (!commentContent.value.trim()) return;
-  await postComment(commentContent.value, null);
-  commentContent.value = "";
+  if (await postComment(commentContent.value, null, "new")) {
+    commentContent.value = "";
+  }
 };
 
 const replyingTo = ref<number | null>(null);
 const replyContent = ref("");
 
 const startReply = (originalId: number) => {
+  commentError.value = null;
   replyingTo.value = originalId;
   replyContent.value = "";
 };
 const cancelReply = () => {
+  commentError.value = null;
   replyingTo.value = null;
   replyContent.value = "";
 };
 const submitReply = async () => {
   if (!replyContent.value.trim() || replyingTo.value == null) return;
-  await postComment(replyContent.value, replyingTo.value);
-  cancelReply();
+  if (await postComment(replyContent.value, replyingTo.value, "reply")) {
+    cancelReply();
+  }
 };
 
 // Int that points to the comment ID you're editing (and zero represents not editing)
@@ -368,9 +416,14 @@ const editingComment = ref<{ id: number; content: string }>({
 
 const editComment = (
   comment: { id: number; content: string },
-) => (editingComment.value = { id: comment.id, content: comment.content });
-const stopEditingComment =
-  () => (editingComment.value = { id: 0, content: "" });
+) => {
+  commentError.value = null;
+  editingComment.value = { id: comment.id, content: comment.content };
+};
+const stopEditingComment = () => {
+  commentError.value = null;
+  editingComment.value = { id: 0, content: "" };
+};
 const saveComment = async () => {
   // exit if no changes made to save wasting server resources
   const original = project.value!.comments.find(
@@ -381,15 +434,33 @@ const saveComment = async () => {
     return;
   }
 
-  const res = await $fetch(`/api/project/${projectId}/comment`, {
-    method: "PATCH",
-    headers: useRequestHeaders(["cookie"]),
-    body: {
-      id: editingComment.value.id,
-      originalId: original.originalId,
-      content: editingComment.value.content,
-    },
+  commentError.value = null;
+  const blockedWordError = await findBlockedWordError({
+    Comment: editingComment.value.content,
   });
+  if (blockedWordError) {
+    commentError.value = { target: "edit", message: blockedWordError };
+    return;
+  }
+
+  let res: unknown;
+  try {
+    res = await $fetch(`/api/project/${projectId}/comment`, {
+      method: "PATCH",
+      headers: useRequestHeaders(["cookie"]),
+      body: {
+        id: editingComment.value.id,
+        originalId: original.originalId,
+        content: editingComment.value.content,
+      },
+    });
+  } catch (e) {
+    commentError.value = {
+      target: "edit",
+      message: errorMessage(e, "Failed to save comment"),
+    };
+    return;
+  }
 
   // using this as an OK response check for now
   if (typeof res === "number") {
@@ -482,6 +553,7 @@ provide("commentContext", {
   user,
   canModerate,
   editingComment,
+  commentError,
   editComment,
   stopEditingComment,
   saveComment,
@@ -692,6 +764,9 @@ const openEditor = async () => {
         maxlength="500"
         style="font-size: 1rem"
       />
+      <p class="form-error" v-if="commentError?.target === 'new'">
+        {{ commentError.message }}
+      </p>
       <div class="button-spacer">
         <button @click="comment">
           <Icon name="ri:send-plane-fill" /> Comment
