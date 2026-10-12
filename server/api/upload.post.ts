@@ -1,4 +1,3 @@
-import { ServerFile } from "nuxt-file-storage";
 import { db } from "../utils/drizzle";
 import * as schema from "../database/schema";
 import jwt, { JwtPayload } from "jsonwebtoken";
@@ -25,7 +24,7 @@ export default defineEventHandler(async (event) => {
 
   await assertNotBanned((decoded as { username: string }).username);
 
-  const file = await readBody<ServerFile>(event);
+  const file = await readUploadedFile(event);
   const extension = getProjectExtension(file.name);
   if (!extension) {
     throw createError({ statusCode: 415, statusMessage: "Invalid file type" });
@@ -38,10 +37,13 @@ export default defineEventHandler(async (event) => {
     ),
   });
 
-  validateProjectFile(parseDataUrl(file.content).binaryString, extension);
+  validateProjectFile(file.data, extension);
 
-  const storedFilename = await storeFileLocally(file, 12, "/projects");
-  const projectId = storedFilename.slice(0, -(extension.length + 1));
+  const projectId = await storeNewBufferLocally(
+    file.data,
+    extension,
+    "/projects",
+  );
 
   await db.insert(schema.projects).values({
     id: projectId,

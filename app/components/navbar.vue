@@ -13,7 +13,6 @@ const { data: profilePicture } = await useAsyncData(
 );
 
 const upload = useTemplateRef("upload") as Ref<HTMLInputElement>;
-const { handleFileInput, files } = useFileStorage({ clearOldFiles: false });
 
 const search = ref(useRoute().query.q || "");
 
@@ -26,10 +25,10 @@ const errorMessage = (e: unknown, fallback: string) =>
 
 const onUpload = async (e: Event) => {
   const input = e.target as HTMLInputElement;
-  await handleFileInput(e);
-  const file = files.value[0];
+  const file = input.files?.[0];
+  if (!file) return;
 
-  const blockedWordError = file && await findBlockedWordError({
+  const blockedWordError = await findBlockedWordError({
     "Project name (taken from the file name)": file.name.replace(
       /\.[^.]+$/,
       "",
@@ -38,10 +37,12 @@ const onUpload = async (e: Event) => {
 
   try {
     if (!blockedWordError) {
+      const form = new FormData();
+      form.append("file", file, file.name);
       await navigateTo(
         `/project/${await $fetch("/api/upload", {
           method: "POST",
-          body: file,
+          body: form,
         })}`,
       );
       return;
@@ -51,7 +52,6 @@ const onUpload = async (e: Event) => {
     alert(errorMessage(err, "Failed to upload project"));
   }
 
-  files.value = [];
   input.value = "";
 };
 

@@ -2,7 +2,6 @@ import { db } from "../../../utils/drizzle";
 import * as schema from "../../../database/schema";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { and, eq } from "drizzle-orm";
-import { ServerFile } from "nuxt-file-storage";
 import sharp from "sharp";
 
 export default defineEventHandler(async (event) => {
@@ -49,17 +48,7 @@ export default defineEventHandler(async (event) => {
 
   await assertNotBanned(username);
 
-  const body = await readBody<
-    {
-      file?: ServerFile;
-      thumbnail?: ServerFile;
-      name: string;
-      description: string;
-      tags: ("dual-screen" | "heavy" | "light" | "balanced" | "cursor")[];
-      private: boolean;
-      reason?: string;
-    }
-  >(event);
+  const body = await readEditRequest(event);
 
   setHeaders(
     event,
@@ -165,10 +154,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    validateProjectFile(
-      parseDataUrl(body.file.content).binaryString,
-      extension,
-    );
+    validateProjectFile(body.file.data, extension);
 
     if (extension !== project.fileType) {
       await deleteFile(`${projectId}.${project.fileType}`, "/projects").catch(
@@ -179,7 +165,11 @@ export default defineEventHandler(async (event) => {
       );
     }
 
-    await storeFileLocally(body.file, projectId, "/projects");
+    await storeBufferLocally(
+      body.file.data,
+      `${projectId}.${extension}`,
+      "/projects",
+    );
   }
 
   await db.update(schema.unistoreData).set({
@@ -188,30 +178,21 @@ export default defineEventHandler(async (event) => {
 
   if (!body.thumbnail) return;
 
-  const { binaryString: imageBuffer } = parseDataUrl(body.thumbnail.content);
-  if (!imageBuffer) {
+  if (!body.thumbnail.data.length) {
     throw createError({
       statusCode: 400,
       statusMessage: "Code not parse thumbnail.",
     });
   }
 
-  const processedImageBuffer = await sharp(imageBuffer).resize({
+  const processedImageBuffer = await sharp(body.thumbnail.data).resize({
     width: 408,
     height: 306,
   }).png().toBuffer();
-  const processedDataUrl = `data:image/png;base64,${
-    processedImageBuffer.toString("base64")
-  }`;
 
-  await storeFileLocally(
-    {
-      name: projectId + ".png",
-      size: processedImageBuffer.length,
-      type: "image/png",
-      content: processedDataUrl,
-    } as unknown as ServerFile, // There's an issue in the ServerFile type which is why this is needed
-    projectId,
+  await storeBufferLocally(
+    processedImageBuffer,
+    `${projectId}.png`,
     "/thumbnails",
   );
 

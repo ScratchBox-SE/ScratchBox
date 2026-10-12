@@ -182,18 +182,18 @@ const cancelModEdit = () => {
 };
 
 const projectUpload = useTemplateRef("projectUpload") as Ref<HTMLInputElement>;
-const { handleFileInput: handleProjectFileInput, files: projectFiles } =
-  useFileStorage({
-    clearOldFiles: true,
-  });
+const projectFile = ref<File | null>(null);
+const handleProjectFileInput = (e: Event) => {
+  projectFile.value = (e.target as HTMLInputElement).files?.[0] ?? null;
+};
 
 const thumbnailUpload = useTemplateRef(
   "thumbnailUpload",
 ) as Ref<HTMLInputElement>;
-const { handleFileInput: handleThumbnailFileInput, files: thumbnailFiles } =
-  useFileStorage({
-    clearOldFiles: true,
-  });
+const thumbnailFile = ref<File | null>(null);
+const handleThumbnailFileInput = (e: Event) => {
+  thumbnailFile.value = (e.target as HTMLInputElement).files?.[0] ?? null;
+};
 
 const commentContent = ref("");
 
@@ -306,18 +306,23 @@ const save = async () => {
   }
 
   try {
+    const form = new FormData();
+    if (projectFile.value) {
+      form.append("file", projectFile.value, projectFile.value.name);
+    }
+    if (thumbnailFile.value) {
+      form.append("thumbnail", thumbnailFile.value, thumbnailFile.value.name);
+    }
+    form.append("name", name.value);
+    form.append("description", description.value);
+    form.append("tags", JSON.stringify(tags));
+    form.append("private", String(isPrivate.value));
+    if (canModEdit.value) form.append("reason", modEditReason.value);
+
     await $fetch(`/api/project/${projectId}/edit`, {
       method: "POST",
       headers: useRequestHeaders(["cookie"]),
-      body: {
-        file: projectFiles.value[0],
-        thumbnail: thumbnailFiles.value[0],
-        name: name.value,
-        description: description.value,
-        tags: tags,
-        private: isPrivate.value,
-        reason: canModEdit.value ? modEditReason.value : undefined,
-      },
+      body: form,
     });
     editing.value = false;
     modEditReason.value = "";
