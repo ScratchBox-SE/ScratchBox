@@ -23,7 +23,15 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  await assertNotBanned((decoded as { username: string }).username);
+  const username = (decoded as { username: string }).username;
+  await assertNotBanned(username);
+
+  if (!checkRateLimit(`comment:${username}`, 3, 60_000)) {
+    throw createError({
+      statusCode: 429,
+      statusMessage: "You're commenting too fast - try again in a moment.",
+    });
+  }
 
   const body = await readRawBody(event);
   if (!body) {
@@ -78,7 +86,7 @@ export default defineEventHandler(async (event) => {
     projectId,
     originalId: 0, // we're going to update this in a sec
     parentId: validatedParentId,
-    user: (decoded as { username: string }).username,
+    user: username,
     content,
     createdAt: new Date(),
   });

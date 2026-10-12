@@ -65,6 +65,15 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const requesterIp = getRequestIP(event, { xForwardedFor: true }) ??
+      "unknown";
+    if (!checkRateLimit(`package:${requesterIp}`, 1, 45_000)) {
+      throw createError({
+        statusCode: 429,
+        statusMessage: "Please wait a bit before packaging again.",
+      });
+    }
+
     const [task] = await db.insert(schema.packageTasks).values({
       projectId,
       status: "pending",

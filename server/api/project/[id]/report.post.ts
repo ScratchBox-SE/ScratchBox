@@ -1,7 +1,7 @@
 import { db } from "../../../utils/drizzle";
 import * as schema from "../../../database/schema";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { eq } from "drizzle-orm";
+import { and, eq, gte } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const token = getCookie(event, "SB_TOKEN");
@@ -50,6 +50,24 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 400,
       statusMessage: "A reason is required",
+    });
+  }
+
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const existingReport = (await db.select({ id: schema.reports.id }).from(
+    schema.reports,
+  ).where(
+    and(
+      eq(schema.reports.type, "project"),
+      eq(schema.reports.projectId, projectId),
+      eq(schema.reports.reporter, username),
+      gte(schema.reports.createdAt, oneDayAgo),
+    ),
+  ))[0];
+  if (existingReport) {
+    throw createError({
+      statusCode: 429,
+      statusMessage: "You've already reported this project today.",
     });
   }
 

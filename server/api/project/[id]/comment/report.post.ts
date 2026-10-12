@@ -1,7 +1,7 @@
 import { db } from "../../../../utils/drizzle";
 import * as schema from "../../../../database/schema";
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { eq } from "drizzle-orm";
+import { and, eq, gte } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const token = getCookie(event, "SB_TOKEN");
@@ -64,6 +64,25 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 403,
       statusMessage: "Can't report your own comment",
+    });
+  }
+
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const existingReport = (await db.select({ id: schema.reports.id }).from(
+    schema.reports,
+  ).where(
+    and(
+      eq(schema.reports.type, "comment"),
+      eq(schema.reports.projectId, projectId),
+      eq(schema.reports.commentId, comment.id),
+      eq(schema.reports.reporter, username),
+      gte(schema.reports.createdAt, oneDayAgo),
+    ),
+  ))[0];
+  if (existingReport) {
+    throw createError({
+      statusCode: 429,
+      statusMessage: "You've already reported this comment today.",
     });
   }
 
