@@ -13,6 +13,14 @@ export default defineNuxtConfig({
       title: "ScratchBox",
     },
   },
+  nitro: {
+    scheduledTasks: {
+      "0 * * * *": ["cleanup-packager-builds"],
+    },
+    experimental: {
+      tasks: true,
+    },
+  },
   runtimeConfig: {
     jwtSecret: process.env.JWT_SECRET,
     authProjectId: process.env.AUTH_PROJECT_ID,

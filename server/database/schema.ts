@@ -94,3 +94,21 @@ export const userRoles = sqliteTable("user_roles", {
 }, (t) => [
   primaryKey({ columns: [t.user, t.role] }),
 ]);
+
+export const packageTasks = sqliteTable("package_tasks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  projectId: text("project_id").notNull().references(() => projects.id),
+  status: text("status").notNull().default("pending"), // pending, completed, failed
+  outputPath: text("output_path"),
+});
+
+export const packageToolkits = sqliteTable("package_toolkits", {
+  platform: text("platform").notNull().primaryKey(),
+  seRef: text("se_ref").notNull().default("main"), // e.g. "main" or a release tag
+  seCommit: text("se_commit").notNull(),
+  status: text("status").notNull().default("building"), // building, ready, failed
+  error: text("error"),
+  builtAt: integer("built_at", { mode: "timestamp" }).default(
+    sql`(strftime('%s', 'now'))`,
+  ).notNull(),
+});

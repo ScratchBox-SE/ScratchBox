@@ -66,6 +66,20 @@ export const assertCanModerate = async (user: string) => {
   return roles;
 };
 
+export const assertIsAdmin = async (user: string) => {
+  const roles = await getActiveRoles(user);
+  if (!roles.includes("admin")) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: "Forbidden",
+    });
+  }
+
+  await assertNotBanned(user);
+
+  return roles;
+};
+
 export const assertCanActOnTarget = async (
   actingRoles: string[],
   targetUser: string,

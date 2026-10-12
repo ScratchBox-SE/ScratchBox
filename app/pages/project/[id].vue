@@ -634,15 +634,23 @@ const openEditor = async () => {
             <Icon :name='liked ? "ri:thumb-up-fill" : "ri:thumb-up-line"' />
             {{ project?.likes }}
           </button>
-          <a
-            class="download"
-            :href="`/api/project/${projectId}/download`"
-            download
-            v-if="!editing"
-          >
-            <Icon name="ri:download-line" />
-            Download
-          </a>
+          <div v-if="!editing">
+            <a
+              class="package"
+              :href="`/package/${projectId}`"
+            >
+              <Icon name="ri:box-1-fill" />
+              Package
+            </a>
+            <a
+              class="download"
+              :href="`/api/project/${projectId}/download`"
+              download
+            >
+              <Icon name="ri:download-line" />
+              Download
+            </a>
+          </div>
           <div v-if="editing && isOwner">
             <button class="upload" @click="projectUpload.click()">
               <Icon name="ri:upload-line" /> Upload
@@ -1103,7 +1111,8 @@ body.project-page main {
 
 /* FIXME: this needs to be a separate component */
 button,
-a.download {
+a.download,
+a.package {
   background: var(--color-primary);
   border: none;
   font-size: 0.875rem;

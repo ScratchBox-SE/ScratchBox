@@ -23,7 +23,7 @@ FROM ${BASE_IMAGE}
 ARG BASE_IMAGE
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl unzip ca-certificates sqlite3 \
+    curl unzip ca-certificates sqlite3 pngquant \
     && rm -rf /var/lib/apt/lists/*
 
 ENV BUN_INSTALL=/root/.bun
@@ -37,6 +37,7 @@ COPY --from=build /app/.output ./.output
 COPY --from=build /app/drizzle.config.ts ./drizzle.config.ts
 COPY --from=build /app/server/database/schema.ts ./server/database/schema.ts
 COPY --from=build /app/server/database/migrations ./server/database/migrations
+COPY --from=build /app/server/packager ./server/packager
 COPY --from=build /app/package.json ./package.json
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
