@@ -10,6 +10,11 @@ import {
   type BundleFileEntry,
   prepareBundleSources,
 } from "../packager/bundleArchive";
+import {
+  deriveCtrUniqueId,
+  formatCtrUniqueId,
+  setRsfUniqueId,
+} from "../packager/ctrUniqueId";
 import { getPlatform } from "../packager/platforms";
 import { readToolkitMetadata, toolkitDir } from "../packager/packageToolkit";
 import { generateProjectIcons } from "../packager/projectIcons";
@@ -73,6 +78,29 @@ export const runBuild = async (
     buildRootDir,
     { recursive: true, filter: (src) => !isBundleArtifact(src) },
   );
+
+  if (platformId === "3ds") {
+    const rsfPaths = listFilesRecursive(buildRootDir).filter(
+      (f) => path.basename(f) === "makerom.rsf",
+    );
+    if (rsfPaths.length === 0) {
+      throw new Error(
+        "The 3DS toolkit has no makerom.rsf, so the CIA's UniqueId can't be set. Rebuild the 3DS toolkit.",
+      );
+    }
+    const uniqueId = deriveCtrUniqueId(projectId);
+    for (const rsfPath of rsfPaths) {
+      fs.writeFileSync(
+        rsfPath,
+        setRsfUniqueId(fs.readFileSync(rsfPath, "utf8"), uniqueId),
+      );
+    }
+    log(
+      `Using 3DS UniqueId ${formatCtrUniqueId(uniqueId)} (title ID 00040000${
+        uniqueId.toString(16).padStart(6, "0")
+      }00).`,
+    );
+  }
 
   if (metadata.resourceCompileCommand) {
     const rcPath = path.join(buildRootDir, "resource.rc");
