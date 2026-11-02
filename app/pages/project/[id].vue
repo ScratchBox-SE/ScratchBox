@@ -634,8 +634,11 @@ const openEditor = async () => {
         />
       </div>
       <div>
-        <img :src="project?.userPicture" /> By
-        <NuxtLink :to="`/user/${project?.user}`">{{ project?.user }}</NuxtLink>
+        <span class="author">
+          <img :src="project?.userPicture" /> By
+          <NuxtLink
+            :to="`/user/${project?.user}`">{{ project?.user }}</NuxtLink>
+        </span>
 
         <div class="options-right">
           <button @click="openEditor" v-if="!editing">
@@ -1101,7 +1104,16 @@ body.project-page main {
       align-items: center;
       gap: 0.5ch;
       flex-wrap: wrap;
+      justify-content: space-between;
+      row-gap: 0.5rem;
       margin-bottom: 1rem;
+
+      & .author {
+        display: flex;
+        align-items: center;
+        gap: 0.5ch;
+        min-width: 0;
+      }
 
       & img {
         width: 2rem;
@@ -1118,7 +1130,6 @@ body.project-page main {
       & .options-right {
         display: flex;
         flex-wrap: wrap;
-        margin-left: auto;
         gap: 0.5rem;
       }
     }
