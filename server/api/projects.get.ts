@@ -1,5 +1,6 @@
 import { db } from "../utils/drizzle";
 import * as schema from "../database/schema";
+import { getTrendingScores } from "../utils/trending";
 import { and, count, desc, eq, inArray, not, sql } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
@@ -34,6 +35,23 @@ export default defineEventHandler(async (event) => {
     description: schema.projects.description,
     id: schema.projects.id,
   };
+
+  if (query.sort === "trending") {
+    const scores = await getTrendingScores();
+    const rows = await db.select({
+      ...selection,
+      createdAt: schema.projects.createdAt,
+    })
+      .from(schema.projects)
+      .where(and(...conditions));
+    return rows
+      .map((r) => ({ r, score: scores.get(r.id) ?? 0 }))
+      .sort((a, b) =>
+        b.score - a.score || b.r.createdAt.getTime() - a.r.createdAt.getTime()
+      )
+      .slice(offset, offset + pageSize)
+      .map(({ r: { name, description, id } }) => ({ name, description, id }));
+  }
 
   if (query.sort === "likes") {
     return await db.select(selection).from(schema.projects).leftJoin(

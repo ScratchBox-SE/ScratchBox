@@ -42,6 +42,7 @@ export default defineEventHandler(async (event) => {
     await db.insert(schema.projectLikes).values({
       projectId,
       user: (decoded as { username: string }).username,
+      createdAt: new Date(),
     });
 
     setResponseStatus(event, 201);

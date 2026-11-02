@@ -1,0 +1,1 @@
+ALTER TABLE `project_likes` ADD `created_at` integer;

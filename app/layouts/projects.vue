@@ -10,7 +10,8 @@ const buildPageLink = (p: number) => ({
 const currentPage = computed(() => Number(route.query.p || "1"));
 
 const selectedSort = computed(() =>
-  (route.query.sort as string) || (route.query.q ? "relevance" : "newest")
+  (route.query.sort as string) ||
+  (route.query.q ? "relevance" : "trending")
 );
 
 const selectedTags = computed(() =>
@@ -46,6 +47,7 @@ const toggleTag = (tag: string) => {
   <div class="filters">
     <select :value="selectedSort" @change="onSortChange">
       <option v-if="route.query.q" value="relevance">Relevance</option>
+      <option v-if="!route.query.q" value="trending">Trending</option>
       <option value="likes">Most Liked</option>
       <option value="newest">Newest</option>
     </select>

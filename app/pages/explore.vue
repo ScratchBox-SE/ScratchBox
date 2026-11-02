@@ -8,7 +8,7 @@ const { data: projects, pending } = await useAsyncData(
       "/api/projects",
       {
         query: {
-          sort: route.query.sort || "newest",
+          sort: route.query.sort || "trending",
           tags: route.query.tags,
           p: route.query.p || "1",
           ps: 12,
