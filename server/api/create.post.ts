@@ -57,5 +57,7 @@ export default defineEventHandler(async (event) => {
     fileType: "sb3",
   });
 
+  if (await generateProjectThumbnail(projectId, "sb3")) await syncUnistore();
+
   return projectId;
 });

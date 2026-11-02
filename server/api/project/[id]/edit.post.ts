@@ -145,6 +145,8 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  let thumbnailGenerated = false;
+
   if (body.file) {
     const extension = getProjectExtension(body.file.name);
     if (!extension) {
@@ -170,13 +172,20 @@ export default defineEventHandler(async (event) => {
       `${projectId}.${extension}`,
       "/projects",
     );
+
+    if (!body.thumbnail) {
+      thumbnailGenerated = await generateProjectThumbnail(projectId, extension);
+    }
   }
 
   await db.update(schema.unistoreData).set({
     revision: (await db.select().from(schema.unistoreData))[0]!.revision + 1,
   });
 
-  if (!body.thumbnail) return;
+  if (!body.thumbnail) {
+    if (thumbnailGenerated) await regenTex3DS();
+    return;
+  }
 
   if (!body.thumbnail.data.length) {
     throw createError({
@@ -195,6 +204,7 @@ export default defineEventHandler(async (event) => {
     `${projectId}.png`,
     "/thumbnails",
   );
+  await markThumbnailCustom(projectId);
 
   await regenTex3DS();
 });

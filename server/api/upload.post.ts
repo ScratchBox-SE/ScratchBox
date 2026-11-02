@@ -56,5 +56,9 @@ export default defineEventHandler(async (event) => {
     fileType: extension,
   });
 
+  if (await generateProjectThumbnail(projectId, extension)) {
+    await syncUnistore();
+  }
+
   return projectId;
 });
