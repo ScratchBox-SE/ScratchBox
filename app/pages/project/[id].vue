@@ -857,7 +857,7 @@ const openEditor = async () => {
 </template>
 <style>
 body.project-page main {
-  min-width: 1024px;
+  min-width: 0;
   display: flex;
   align-items: center;
   flex-direction: column;
@@ -1100,7 +1100,7 @@ body.project-page main {
       display: flex;
       align-items: center;
       gap: 0.5ch;
-      position: relative;
+      flex-wrap: wrap;
       margin-bottom: 1rem;
 
       & img {
@@ -1112,12 +1112,13 @@ body.project-page main {
 
       & a {
         font-weight: bold;
+        overflow-wrap: anywhere;
       }
 
       & .options-right {
         display: flex;
-        position: absolute;
-        right: 0;
+        flex-wrap: wrap;
+        margin-left: auto;
         gap: 0.5rem;
       }
     }
@@ -1128,6 +1129,7 @@ body.project-page main {
       color: var(--color-text);
       font-weight: bold;
       font-size: 2rem;
+      width: 100%;
       cursor: text;
       resize: none;
       margin-bottom: 0.5rem;
@@ -1232,8 +1234,15 @@ a.package {
 
     & .left > object,
     & .left > iframe {
-      aspect-ratio: auto;
-      height: auto;
+      width: 100%;
+    }
+
+    & .left textarea {
+      font-size: 1.5rem;
+    }
+
+    & .right > .inner {
+      min-height: 12rem;
     }
 
     & .right > .inner {
